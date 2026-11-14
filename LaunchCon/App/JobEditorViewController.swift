@@ -107,15 +107,25 @@ final class JobEditorViewController: NSViewController {
         switch schema.kind {
         case .bool:
             // KeepAlive may be a dictionary — not editable as a checkbox.
-            return value is [String: Any] ? .unsupported : .bool
+            // Non-boolean scalars (e.g. KeepAlive = 1) aren't either.
+            if value is [String: Any] { return .unsupported }
+            if let number = value as? NSNumber,
+               CFGetTypeID(number) != CFBooleanGetTypeID() {
+                return .unsupported
+            }
+            return .bool
+        case .integer:
+            if let number = value as? NSNumber,
+               CFGetTypeID(number) == CFBooleanGetTypeID() {
+                return .unsupported
+            }
+            return value == nil || value is NSNumber ? .integer : .unsupported
         case .string:
             return value == nil || value is String ? .string : .unsupported
-        case .integer:
-            return value == nil || value is NSNumber ? .integer : .unsupported
         case .stringList:
             return value == nil || value is [String] ? .stringList : .unsupported
         case .stringMap:
-            return value == nil || value is [String: Any] ? .stringMap : .unsupported
+            return value == nil || value is [String: String] ? .stringMap : .unsupported
         case .calendarInterval:
             return isCalendarIntervalValue(value) ? .calendarInterval : .unsupported
         default:
@@ -179,8 +189,13 @@ final class JobEditorViewController: NSViewController {
 
         case .popup(let options):
             let popup = NSPopUpButton(frame: .zero, pullsDown: false)
-            popup.addItems(withTitles: [""] + options)
-            if let current = value as? String, let index = options.firstIndex(of: current) {
+            var allOptions = options
+            // Keep an unrecognized existing value selectable so it round-trips.
+            if let current = value as? String, !options.contains(current) {
+                allOptions.append(current)
+            }
+            popup.addItems(withTitles: [""] + allOptions)
+            if let current = value as? String, let index = allOptions.firstIndex(of: current) {
                 popup.selectItem(at: index + 1)
             }
             popup.target = self
@@ -324,7 +339,14 @@ final class JobEditorViewController: NSViewController {
 
             case .bool:
                 guard let checkbox = controls[key] as? NSButton else { continue }
-                newContents[key] = checkbox.state == .on
+                if checkbox.state == .on {
+                    newContents[key] = true
+                } else if document.savedContents[key] != nil {
+                    // Preserve an explicit `false`; don't invent keys that were absent.
+                    newContents[key] = false
+                } else {
+                    newContents.removeValue(forKey: key)
+                }
 
             case .integer:
                 guard let field = controls[key] as? NSTextField else { continue }
