@@ -12,7 +12,6 @@ final class MainWindowController: NSWindowController {
             defer: false
         )
         window.title = "LaunchController"
-        window.center()
 
         let sidebar = DomainSidebarController(store: store)
         let jobList = JobListController(store: store)
@@ -34,6 +33,10 @@ final class MainWindowController: NSWindowController {
         splitViewController.splitViewItems[2].minimumThickness = 220
 
         window.contentViewController = splitViewController
+        // Assigning a contentViewController lets AppKit resize the window to the
+        // view's fitting size; enforce our desired size afterwards.
+        window.setContentSize(NSSize(width: 1100, height: 640))
+        window.center()
         super.init(window: window)
     }
 

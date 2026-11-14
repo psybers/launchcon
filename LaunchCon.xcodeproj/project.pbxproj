@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		06010E1581C2371623E45540 /* LaunchConTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889377DDFAD4784AEECB15E7 /* LaunchConTests.swift */; };
+		0BB59315ADA7A06446A3C712 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D09E9DC5DF6F6547A168C84 /* main.swift */; };
 		14653E48802DD36E3D79AAAC /* LaunchdDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B1A0D03BFD66A0F7EE483D /* LaunchdDomain.swift */; };
 		22E58200C48BA01055108FD7 /* JobDetailController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D0FEEE8989C182DFC7D6CA /* JobDetailController.swift */; };
 		254FADEFD122C11BACABF59B /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F62B3B5A53C8218D6908ACE /* MainWindowController.swift */; };
@@ -32,6 +33,7 @@
 
 /* Begin PBXFileReference section */
 		3910F2E0E194165736F12301 /* JobStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobStore.swift; sourceTree = "<group>"; };
+		4D09E9DC5DF6F6547A168C84 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		6014E89288243DFB34C7F9F1 /* Launchctl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Launchctl.swift; sourceTree = "<group>"; };
 		61D0FEEE8989C182DFC7D6CA /* JobDetailController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailController.swift; sourceTree = "<group>"; };
 		6880076580CF97AE6FF4178C /* Job.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Job.swift; sourceTree = "<group>"; };
@@ -93,6 +95,7 @@
 				61D0FEEE8989C182DFC7D6CA /* JobDetailController.swift */,
 				7D7BE7740A974E13A606900C /* JobListController.swift */,
 				3910F2E0E194165736F12301 /* JobStore.swift */,
+				4D09E9DC5DF6F6547A168C84 /* main.swift */,
 				8F62B3B5A53C8218D6908ACE /* MainWindowController.swift */,
 			);
 			path = App;
@@ -193,6 +196,7 @@
 				14653E48802DD36E3D79AAAC /* LaunchdDomain.swift in Sources */,
 				254FADEFD122C11BACABF59B /* MainWindowController.swift in Sources */,
 				32F663FC06358B2EF0A18EFA /* Plist.swift in Sources */,
+				0BB59315ADA7A06446A3C712 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

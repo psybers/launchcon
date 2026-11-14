@@ -39,6 +39,7 @@ final class DomainSidebarController: NSViewController {
         scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
         scrollView.borderType = .noBorder
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         refreshButton.bezelStyle = .rounded
         refreshButton.target = self
