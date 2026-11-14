@@ -9,6 +9,15 @@ final class DomainSidebarController: NSViewController {
     private let searchField = NSSearchField()
     private let refreshButton = NSButton(title: "Refresh", target: nil, action: nil)
 
+    /// Width that fits the longest domain title plus cell padding and scroller.
+    static func fitWidth(for groups: [JobStore.DomainGroup]) -> CGFloat {
+        let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        let maxTitle = groups
+            .map { ($0.title as NSString).size(withAttributes: [.font: font]).width }
+            .max() ?? 100
+        return ceil(maxTitle) + 56
+    }
+
     init(store: JobStore) {
         self.store = store
         super.init(nibName: nil, bundle: nil)
@@ -29,6 +38,7 @@ final class DomainSidebarController: NSViewController {
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("domain"))
         column.title = "Domain"
+        column.width = Self.fitWidth(for: store.groups) - 20
         tableView.addTableColumn(column)
         tableView.headerView = nil
         tableView.dataSource = self

@@ -24,15 +24,16 @@ final class MainWindowController: NSWindowController {
         }
 
         let splitViewController = NSSplitViewController()
-        splitViewController.addSplitViewItem(NSSplitViewItem(viewController: sidebar))
+        let sidebarItem = NSSplitViewItem(viewController: sidebar)
+        // Fixed content-fit widths: the job list absorbs all remaining space.
+        sidebarItem.minimumThickness = DomainSidebarController.fitWidth(for: store.groups)
+        sidebarItem.maximumThickness = sidebarItem.minimumThickness
+        let detailItem = NSSplitViewItem(viewController: detail)
+        detailItem.minimumThickness = JobDetailController.fitWidth
+        detailItem.maximumThickness = detailItem.minimumThickness
+        splitViewController.addSplitViewItem(sidebarItem)
         splitViewController.addSplitViewItem(NSSplitViewItem(viewController: list))
-        splitViewController.addSplitViewItem(NSSplitViewItem(viewController: detail))
-
-        // Sidebar: narrow, fixed-ish. Detail pane: resizable but with a floor.
-        let sidebarItem = splitViewController.splitViewItems[0]
-        sidebarItem.minimumThickness = 160
-        sidebarItem.maximumThickness = 320
-        splitViewController.splitViewItems[2].minimumThickness = 220
+        splitViewController.addSplitViewItem(detailItem)
 
         window.contentViewController = splitViewController
         // Assigning a contentViewController lets AppKit resize the window to the

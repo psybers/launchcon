@@ -7,6 +7,15 @@ final class JobDetailController: NSViewController {
     private let stackView = NSStackView()
     private var valueLabels: [String: NSTextField] = [:]
 
+    /// Approximate width that fits the row titles plus a typical value.
+    static var fitWidth: CGFloat {
+        let font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+        let maxTitle = rows.map {
+            ($0.title as NSString).size(withAttributes: [.font: font]).width
+        }.max() ?? 0
+        return min(max(ceil(maxTitle) + 170, 240), 380)
+    }
+
     private static let rows: [(key: String, title: String)] = [
         ("label", "Label"),
         ("domain", "Domain"),
@@ -30,9 +39,10 @@ final class JobDetailController: NSViewController {
             titleLabel.font = .systemFont(ofSize: 11, weight: .semibold)
             titleLabel.textColor = .secondaryLabelColor
 
-            let valueLabel = NSTextField(wrappingLabelWithString: "—")
+            let valueLabel = NSTextField(labelWithString: "—")
             valueLabel.font = .systemFont(ofSize: 13)
-            valueLabel.maximumNumberOfLines = 0
+            valueLabel.maximumNumberOfLines = 1
+            valueLabel.lineBreakMode = .byTruncatingMiddle
 
             let rowStack = NSStackView(views: [titleLabel, valueLabel])
             rowStack.orientation = .vertical
