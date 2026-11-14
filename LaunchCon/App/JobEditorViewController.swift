@@ -184,13 +184,13 @@ final class JobEditorViewController: NSViewController {
                 popup.selectItem(at: index + 1)
             }
             popup.target = self
-            popup.action = #selector(markDirty)
+            popup.action = #selector(edited)
             popup.font = .systemFont(ofSize: 13)
             controls[schema.key] = popup
             return popup
 
         case .bool:
-            let checkbox = NSButton(checkboxWithTitle: "", target: self, action: #selector(markDirty))
+            let checkbox = NSButton(checkboxWithTitle: "", target: self, action: #selector(edited))
             checkbox.state = (value as? Bool) == true ? .on : .off
             controls[schema.key] = checkbox
             return checkbox
@@ -217,7 +217,7 @@ final class JobEditorViewController: NSViewController {
 
         case .calendarInterval:
             let editor = CalendarIntervalEditor(value: value)
-            editor.onChange = { [weak self] in self?.markDirty() }
+            editor.onChange = { [weak self] in self?.edited() }
             calendarEditors[schema.key] = editor
             return editor
 
@@ -231,7 +231,7 @@ final class JobEditorViewController: NSViewController {
 
     private func wire(_ field: NSTextField) {
         field.target = self
-        field.action = #selector(markDirty)
+        field.action = #selector(edited)
     }
 
     private func makeChooseButton() -> NSButton {
@@ -251,7 +251,7 @@ final class JobEditorViewController: NSViewController {
         panel.prompt = "Choose"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         field.stringValue = url.path
-        markDirty()
+        edited()
     }
 
     private func makeTextEditor(key: String, text: String, placeholder: String) -> NSView {
@@ -300,16 +300,14 @@ final class JobEditorViewController: NSViewController {
 
     // MARK: - Save
 
-    @objc private func markDirty() {
-        document.markDirty()
-        statusLabel?.stringValue = ""
+    /// True when the current control values differ from the saved plist.
+    var isDirty: Bool {
+        document.hasChanges(comparedTo: buildEditedContents().contents)
     }
 
-    @objc private func cancelClicked() {
-        onCancel?()
-    }
-
-    @objc func save() {
+    /// Builds the plist dictionary the controls currently represent,
+    /// plus validation errors for fields that can't be represented.
+    private func buildEditedContents() -> (contents: [String: Any], integerError: String?, calendarError: String?) {
         var newContents = document.contents
         var integerError: String?
         var calendarError: String?
@@ -381,6 +379,23 @@ final class JobEditorViewController: NSViewController {
             }
         }
 
+        return (newContents, integerError, calendarError)
+    }
+
+    /// Clears the "Saved" status after any edit.
+    @objc private func edited() {
+        statusLabel?.stringValue = ""
+    }
+
+    @objc private func cancelClicked() {
+        onCancel?()
+    }
+
+    /// Saves the document. Returns false if validation fails or the write errors.
+    @discardableResult
+    @objc func save() -> Bool {
+        let (newContents, integerError, calendarError) = buildEditedContents()
+
         if integerError != nil || calendarError != nil {
             let alert = NSAlert()
             alert.messageText = "Invalid value"
@@ -391,25 +406,27 @@ final class JobEditorViewController: NSViewController {
             }
             alert.alertStyle = .warning
             alert.runModal()
-            return
+            return false
         }
 
         do {
             try document.save(newContents)
             statusLabel.stringValue = "Saved"
             onSaved?()
+            return true
         } catch {
             let alert = NSAlert()
             alert.messageText = "Save failed"
             alert.informativeText = "\(error)"
             alert.alertStyle = .critical
             alert.runModal()
+            return false
         }
     }
 }
 
 extension JobEditorViewController: NSTextViewDelegate {
     func textDidChange(_ notification: Notification) {
-        markDirty()
+        edited()
     }
 }

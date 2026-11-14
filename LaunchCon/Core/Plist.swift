@@ -74,4 +74,30 @@ enum Plist {
     static func label(in plist: [String: Any]) -> String? {
         plist["Label"] as? String
     }
+
+    /// Deep equality for plist values. Distinguishes booleans from numbers.
+    static func valuesEqual(_ lhs: Any?, _ rhs: Any?) -> Bool {
+        switch (lhs, rhs) {
+        case (nil, nil):
+            return true
+        case (nil, _), (_, nil):
+            return false
+        case let (l as [String: Any], r as [String: Any]):
+            guard l.count == r.count else { return false }
+            return l.allSatisfy { key, value in
+                valuesEqual(value, r[key])
+            }
+        case let (l as [Any], r as [Any]):
+            return l.count == r.count && zip(l, r).allSatisfy { valuesEqual($0, $1) }
+        case let (l as NSNumber, r as NSNumber):
+            let lIsBool = CFGetTypeID(l) == CFBooleanGetTypeID()
+            let rIsBool = CFGetTypeID(r) == CFBooleanGetTypeID()
+            guard lIsBool == rIsBool else { return false }
+            return l.isEqual(r)
+        case let (l as String, r as String):
+            return l == r
+        default:
+            return false
+        }
+    }
 }

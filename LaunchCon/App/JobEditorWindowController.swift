@@ -64,7 +64,7 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
 
     /// Returns true if the window may close; prompts when dirty.
     private func confirmClose() -> Bool {
-        guard editor.document.isDirty else { return true }
+        guard editor.isDirty else { return true }
 
         let alert = NSAlert()
         alert.messageText = "Save changes to \(editor.document.url.lastPathComponent)?"
@@ -76,8 +76,7 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
 
         switch alert.runModal() {
         case .alertFirstButtonReturn:
-            editor.save()
-            return true
+            return editor.save()
         case .alertSecondButtonReturn:
             return true
         default:
