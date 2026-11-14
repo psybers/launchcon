@@ -133,4 +133,20 @@ final class PlistTests: XCTestCase {
             .appendingPathComponent("does-not-exist-\(UUID().uuidString).plist")
         XCTAssertNil(Plist.load(url))
     }
+
+    func testValuesEqual() {
+        XCTAssertTrue(Plist.valuesEqual("a", "a"))
+        XCTAssertTrue(Plist.valuesEqual(9, NSNumber(value: 9)))
+        XCTAssertTrue(Plist.valuesEqual(true, NSNumber(value: true)))
+        XCTAssertFalse(Plist.valuesEqual(true, 1)) // bool vs int must differ
+        XCTAssertFalse(Plist.valuesEqual("a", "b"))
+        XCTAssertTrue(Plist.valuesEqual(["a", "b"], ["a", "b"]))
+        XCTAssertTrue(Plist.valuesEqual(
+            ["Hour": 9, "Minute": 0],
+            ["Hour": NSNumber(value: 9), "Minute": NSNumber(value: 0)]
+        ))
+        XCTAssertFalse(Plist.valuesEqual(["a": 1], ["a": 1, "b": 2]))
+        XCTAssertTrue(Plist.valuesEqual(nil, nil))
+        XCTAssertFalse(Plist.valuesEqual("x", nil))
+    }
 }
