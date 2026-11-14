@@ -4,6 +4,8 @@ import AppKit
 final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
 
     private let editor: JobEditorViewController
+    private var escapeMonitor: Any?
+    private var isCanceling = false
     var onClose: (() -> Void)?
 
     init(document: PlistDocument, jobLabel: String, onSaved: @escaping () -> Void) {
@@ -14,7 +16,6 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
             defer: false
         )
         window.title = "Edit \(jobLabel)"
-        window.center()
 
         editor = JobEditorViewController(document: document)
         editor.onSaved = onSaved
@@ -24,6 +25,25 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
 
         super.init(window: window)
         window.delegate = self
+
+        editor.onCancel = { [weak self] in
+            self?.cancel()
+        }
+
+        // Escape cancels from anywhere in the window, including text fields.
+        escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, event.window === self.window, event.keyCode == 53 else {
+                return event
+            }
+            self.cancel()
+            return nil
+        }
+    }
+
+    deinit {
+        if let escapeMonitor {
+            NSEvent.removeMonitor(escapeMonitor)
+        }
     }
 
     @available(*, unavailable)
@@ -35,7 +55,15 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
         editor.save()
     }
 
-    func windowShouldClose(_ sender: NSWindow) -> Bool {
+    /// Closes the window, prompting to save first if there are unsaved changes.
+    func cancel() {
+        guard confirmClose() else { return }
+        isCanceling = true
+        window?.close()
+    }
+
+    /// Returns true if the window may close; prompts when dirty.
+    private func confirmClose() -> Bool {
         guard editor.document.isDirty else { return true }
 
         let alert = NSAlert()
@@ -55,6 +83,10 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
         default:
             return false
         }
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        isCanceling || confirmClose()
     }
 
     func windowWillClose(_ notification: Notification) {

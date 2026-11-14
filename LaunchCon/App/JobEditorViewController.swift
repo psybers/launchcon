@@ -14,6 +14,9 @@ final class JobEditorViewController: NSViewController {
     private var calendarEditors: [String: CalendarIntervalEditor] = [:]
     private var statusLabel: NSTextField!
     private var saveButton: NSButton!
+    private var cancelButton: NSButton!
+    /// Called when the user cancels (button or Escape).
+    var onCancel: (() -> Void)?
 
     init(document: PlistDocument) {
         self.document = document
@@ -52,11 +55,16 @@ final class JobEditorViewController: NSViewController {
         saveButton.keyEquivalent = "\r"
         saveButton.target = self
 
+        cancelButton = NSButton(title: "Cancel", target: self, action: #selector(cancelClicked))
+        cancelButton.bezelStyle = .rounded
+        cancelButton.keyEquivalent = "\u{1b}" // Escape
+        cancelButton.target = self
+
         statusLabel = NSTextField(labelWithString: "")
         statusLabel.font = .systemFont(ofSize: 11)
         statusLabel.textColor = .secondaryLabelColor
 
-        let bottomBar = NSStackView(views: [saveButton, statusLabel])
+        let bottomBar = NSStackView(views: [saveButton, cancelButton, statusLabel])
         bottomBar.orientation = .horizontal
         bottomBar.spacing = 12
         bottomBar.edgeInsets = NSEdgeInsets(top: 8, left: 16, bottom: 12, right: 16)
@@ -295,6 +303,10 @@ final class JobEditorViewController: NSViewController {
     @objc private func markDirty() {
         document.markDirty()
         statusLabel?.stringValue = ""
+    }
+
+    @objc private func cancelClicked() {
+        onCancel?()
     }
 
     @objc func save() {
