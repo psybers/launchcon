@@ -1,6 +1,6 @@
 name: LaunchCon
 options:
-  bundleIdPrefix: com.example
+  bundleIdPrefix: com.psybers
   createIntermediateGroups: true
 targets:
   LaunchCon:
@@ -11,7 +11,7 @@ targets:
       - path: LaunchCon
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.LaunchCon
+        PRODUCT_BUNDLE_IDENTIFIER: com.psybers.LaunchCon
         PRODUCT_NAME: LaunchCon
         INFOPLIST_KEY_CFBundleDisplayName: LaunchController
         INFOPLIST_KEY_NSPrincipalClass: NSApplication

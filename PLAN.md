@@ -44,7 +44,7 @@ Goal: empty AppKit app that builds and launches.
    LaunchConTests/
    ```
 2. Write `project.yml` (XcodeGen) defining an app target `LaunchCon`
-   (bundle id `com.example.LaunchCon`, macOS 13+), a unit-test target, and
+   (bundle id `com.psybers.LaunchCon`, macOS 13+), a unit-test target, and
    AppKit settings (`INFOPLIST_KEY_NSPrincipalClass = NSApplication`).
 3. Implement `AppDelegate` with a minimal `applicationDidFinishLaunching` that
    creates `MainWindowController` and shows a window titled "LaunchController"
