@@ -5,6 +5,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         mainWindowController = MainWindowController()
+        NSApp.mainMenu = buildMainMenu(jobTarget: mainWindowController)
         mainWindowController?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -13,11 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         true
     }
 
-    func applicationWillFinishLaunching(_ notification: Notification) {
-        NSApp.mainMenu = buildMainMenu()
-    }
-
-    private func buildMainMenu() -> NSMenu {
+    private func buildMainMenu(jobTarget: MainWindowController?) -> NSMenu {
         let mainMenu = NSMenu()
 
         // App menu
@@ -45,6 +42,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         editMenu.addItem(withTitle: "Copy", action: Selector(("copy:")), keyEquivalent: "c")
         editMenu.addItem(withTitle: "Paste", action: Selector(("paste:")), keyEquivalent: "v")
         editMenu.addItem(withTitle: "Select All", action: Selector(("selectAll:")), keyEquivalent: "a")
+
+        // Job menu — actions apply to the selected job in the main window.
+        let jobMenuItem = NSMenuItem()
+        mainMenu.addItem(jobMenuItem)
+        let jobMenu = NSMenu(title: "Job")
+        jobMenuItem.submenu = jobMenu
+
+        func jobItem(_ title: String, _ action: Selector, _ key: String = "") -> NSMenuItem {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+            item.target = jobTarget
+            return item
+        }
+        jobMenu.addItem(jobItem("Load", #selector(MainWindowController.jobLoad(_:))))
+        jobMenu.addItem(jobItem("Unload", #selector(MainWindowController.jobUnload(_:))))
+        jobMenu.addItem(.separator())
+        jobMenu.addItem(jobItem("Enable", #selector(MainWindowController.jobEnable(_:))))
+        jobMenu.addItem(jobItem("Disable", #selector(MainWindowController.jobDisable(_:))))
+        jobMenu.addItem(.separator())
+        jobMenu.addItem(jobItem("Start", #selector(MainWindowController.jobStart(_:))))
+        jobMenu.addItem(jobItem("Stop", #selector(MainWindowController.jobStop(_:))))
+        jobMenu.addItem(.separator())
+        jobMenu.addItem(jobItem("Refresh", #selector(MainWindowController.jobRefresh(_:)), "r"))
 
         // Window menu
         let windowMenuItem = NSMenuItem()

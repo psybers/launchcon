@@ -8,7 +8,10 @@ final class JobStore {
     /// directory of plists, or both.
     struct DomainGroup: Hashable {
         let title: String
+        /// Domain queried for live job state, if any.
         let launchdDomain: LaunchdDomain?
+        /// Domain used when bootstrapping/loading a plist from this group.
+        let bootstrapDomain: LaunchdDomain
         let plistDirectories: [URL]
 
         var id: String { title }
@@ -26,26 +29,31 @@ final class JobStore {
             DomainGroup(
                 title: "User Agents",
                 launchdDomain: .guiCurrentUser,
+                bootstrapDomain: .guiCurrentUser,
                 plistDirectories: [homeLibrary("LaunchAgents")]
             ),
             DomainGroup(
                 title: "LaunchAgents",
                 launchdDomain: .guiCurrentUser,
+                bootstrapDomain: .guiCurrentUser,
                 plistDirectories: [URL(fileURLWithPath: "/Library/LaunchAgents")]
             ),
             DomainGroup(
                 title: "LaunchDaemons",
                 launchdDomain: nil,
+                bootstrapDomain: .system,
                 plistDirectories: [URL(fileURLWithPath: "/Library/LaunchDaemons")]
             ),
             DomainGroup(
                 title: "System Agents",
                 launchdDomain: nil,
+                bootstrapDomain: .guiCurrentUser,
                 plistDirectories: [URL(fileURLWithPath: "/System/Library/LaunchAgents")]
             ),
             DomainGroup(
                 title: "System Daemons",
                 launchdDomain: nil,
+                bootstrapDomain: .system,
                 plistDirectories: [URL(fileURLWithPath: "/System/Library/LaunchDaemons")]
             ),
         ]
@@ -83,6 +91,35 @@ final class JobStore {
 
     func reload() {
         Task { await load() }
+    }
+
+    // MARK: - Job actions
+
+    enum JobAction {
+        case load, unload, enable, disable, start, stop
+    }
+
+    /// Performs a launchctl action on a job, then reloads the list.
+    /// Throws `LaunchctlError` on failure; the list is only reloaded on success.
+    func perform(_ action: JobAction, on job: Job) async throws {
+        switch action {
+        case .load:
+            guard let plistPath = job.plistPath else {
+                throw LaunchctlError.invalidOutput("Job has no plist path")
+            }
+            try await Launchctl.load(plistPath: plistPath, domain: job.domain)
+        case .unload:
+            try await Launchctl.unload(label: job.label, domain: job.domain)
+        case .enable:
+            try await Launchctl.enable(label: job.label, domain: job.domain)
+        case .disable:
+            try await Launchctl.disable(label: job.label, domain: job.domain)
+        case .start:
+            try await Launchctl.kickstart(label: job.label, domain: job.domain)
+        case .stop:
+            try await Launchctl.kill(label: job.label, domain: job.domain)
+        }
+        await MainActor.run { self.reload() }
     }
 
     private func load() async {
@@ -141,13 +178,11 @@ final class JobStore {
         // 3. Add discovered plists that aren't currently loaded.
         let loadedLabels = Set(loaded.map(\.label))
         for (label, entry) in discovered where !loadedLabels.contains(label) {
-            let domain = group.launchdDomain
-                ?? LaunchdDomain(rawValue: entry.url.deletingLastPathComponent().path)
             loaded.append(Job(
                 label: label,
                 pid: nil,
                 lastExitStatus: nil,
-                domain: domain,
+                domain: group.bootstrapDomain,
                 plistPath: entry.url.path,
                 isLoaded: false,
                 isDisabled: false,

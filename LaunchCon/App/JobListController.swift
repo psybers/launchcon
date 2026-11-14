@@ -1,14 +1,28 @@
 import AppKit
 
+/// NSTableView that selects the row under the cursor before showing the
+/// context menu, so menu actions apply to the clicked job.
+private final class JobTableView: NSTableView {
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let row = row(at: convert(event.locationInWindow, from: nil))
+        if row >= 0 {
+            selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        }
+        return super.menu(for: event)
+    }
+}
+
 /// Main content: table of jobs with status coloring.
 final class JobListController: NSViewController {
 
     private let store: JobStore
-    private let tableView = NSTableView()
+    private let tableView = JobTableView()
     private let scrollView = NSScrollView()
     private let emptyLabel = NSTextField(labelWithString: "No jobs")
 
     var onSelectionChange: ((Job?) -> Void)?
+    /// Called with the job action and the selected job when a menu item is chosen.
+    var onJobAction: ((JobStore.JobAction, Job) -> Void)?
 
     init(store: JobStore) {
         self.store = store
@@ -40,6 +54,7 @@ final class JobListController: NSViewController {
 
         tableView.dataSource = self
         tableView.delegate = self
+        tableView.menu = buildJobMenu()
         tableView.usesAutomaticRowHeights = true
         tableView.rowSizeStyle = .default
 
@@ -82,6 +97,62 @@ final class JobListController: NSViewController {
         tableView.reloadData()
         emptyLabel.isHidden = !store.visibleJobs.isEmpty || store.isLoading
         emptyLabel.stringValue = store.isLoading ? "Loading…" : (store.loadError ?? "No jobs")
+    }
+
+    // MARK: - Job actions
+
+    private func buildJobMenu() -> NSMenu {
+        let menu = NSMenu()
+
+        func addItem(_ title: String, _ action: Selector) {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            item.target = self
+            menu.addItem(item)
+        }
+
+        addItem("Load", #selector(jobLoad(_:)))
+        addItem("Unload", #selector(jobUnload(_:)))
+        menu.addItem(.separator())
+        addItem("Enable", #selector(jobEnable(_:)))
+        addItem("Disable", #selector(jobDisable(_:)))
+        menu.addItem(.separator())
+        addItem("Start", #selector(jobStart(_:)))
+        addItem("Stop", #selector(jobStop(_:)))
+        menu.addItem(.separator())
+        addItem("Refresh", #selector(jobRefresh(_:)))
+        return menu
+    }
+
+    private func performAction(_ action: JobStore.JobAction) {
+        guard let job = selectedJob() else { return }
+        onJobAction?(action, job)
+    }
+
+    @objc private func jobLoad(_ sender: Any?) { performAction(.load) }
+    @objc private func jobUnload(_ sender: Any?) { performAction(.unload) }
+    @objc private func jobEnable(_ sender: Any?) { performAction(.enable) }
+    @objc private func jobDisable(_ sender: Any?) { performAction(.disable) }
+    @objc private func jobStart(_ sender: Any?) { performAction(.start) }
+    @objc private func jobStop(_ sender: Any?) { performAction(.stop) }
+    @objc private func jobRefresh(_ sender: Any?) { store.reload() }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(jobRefresh(_:)) { return true }
+        guard let job = selectedJob() else { return false }
+        switch menuItem.action {
+        case #selector(jobLoad(_:)):
+            return !job.isLoaded && job.plistPath != nil
+        case #selector(jobUnload(_:)):
+            return job.isLoaded
+        case #selector(jobEnable(_:)):
+            return job.isLoaded && job.isDisabled
+        case #selector(jobDisable(_:)):
+            return job.isLoaded && !job.isDisabled
+        case #selector(jobStart(_:)), #selector(jobStop(_:)):
+            return job.isLoaded
+        default:
+            return true
+        }
     }
 
     func selectedJob() -> Job? {
