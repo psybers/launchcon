@@ -150,3 +150,141 @@ final class PlistTests: XCTestCase {
         XCTAssertFalse(Plist.valuesEqual("x", nil))
     }
 }
+
+final class ServicePrintParserTests: XCTestCase {
+
+    func testParsesTopLevelProperties() {
+        let output = """
+        gui/503/com.example.foo = {
+        \tactive count = 0
+        \tpath = /Users/x/Library/LaunchAgents/foo.plist
+        \ttype = LaunchAgent
+        \tstate = not running
+        \n
+        \tprogram = /bin/echo
+        \targuments = {
+        \t\t/bin/echo
+        \t\thi there
+        \t}
+        \n
+        \tstdout path = /tmp/out.log
+        \tstderr path = /dev/null
+        \truns = 3
+        \tlast exit code = (never exited)
+        \tproperties = inferred program
+        }
+        """
+        let props = ServicePrintParser.properties(output)
+        XCTAssertEqual(props["state"], "not running")
+        XCTAssertEqual(props["program"], "/bin/echo")
+        XCTAssertEqual(props["path"], "/Users/x/Library/LaunchAgents/foo.plist")
+        XCTAssertEqual(props["stdout path"], "/tmp/out.log")
+        XCTAssertEqual(props["stderr path"], "/dev/null")
+        XCTAssertEqual(props["runs"], "3")
+        XCTAssertEqual(props["last exit code"], "(never exited)")
+        XCTAssertEqual(props["properties"], "inferred program")
+        // Nested block contents must not leak into top-level properties.
+        XCTAssertNil(props["/bin/echo"])
+        XCTAssertEqual(props["arguments"], "(…)")
+        XCTAssertNil(props["gui/503/com.example.foo"])
+    }
+
+    func testEmptyOutput() {
+        XCTAssertTrue(ServicePrintParser.properties("").isEmpty)
+    }
+}
+
+final class JobValidatorTests: XCTestCase {
+
+    private func makeJob(plist: [String: Any]?, label: String = "com.example.test") throws -> Job {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let url = dir.appendingPathComponent("\(label).plist")
+        if let plist { try Plist.save(plist, to: url) }
+        return Job(
+            label: label, pid: nil, lastExitStatus: nil,
+            domain: .guiCurrentUser, plistPath: url.path,
+            isLoaded: false, isDisabled: false, plist: plist
+        )
+    }
+
+    func testMissingLabel() throws {
+        let job = try makeJob(plist: ["Program": "/bin/echo"])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.severity == .error && $0.key == "Label"
+        })
+    }
+
+    func testLabelFilenameMismatch() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.other",
+            "Program": "/bin/echo",
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.severity == .warning && $0.message.contains("doesn't match filename")
+        })
+    }
+
+    func testMissingProgram() throws {
+        let job = try makeJob(plist: ["Label": "com.example.test"])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.severity == .error && $0.message.contains("Neither Program")
+        })
+    }
+
+    func testProgramNotFound() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.test",
+            "Program": "/nonexistent/binary",
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.severity == .error && $0.message.contains("Program not found")
+        })
+    }
+
+    func testValidJobHasNoErrors() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.test",
+            "Program": "/bin/echo",
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertFalse(diagnostics.contains { $0.severity == .error })
+    }
+
+    func testBadCalendarInterval() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.test",
+            "Program": "/bin/echo",
+            "StartCalendarInterval": ["Hour": "nine"],
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.key == "StartCalendarInterval" && $0.severity == .error
+        })
+    }
+}
+
+final class LogTailTests: XCTestCase {
+
+    func testTailReturnsLastLines() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("log-\(UUID().uuidString).txt")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let content = (1...1000).map { "line \($0)" }.joined(separator: "\n")
+        try content.write(to: url, atomically: true, encoding: .utf8)
+
+        let tail = try XCTUnwrap(LogTail.tail(path: url.path, maxLines: 10))
+        let lines = tail.split(separator: "\n")
+        XCTAssertEqual(lines.count, 10)
+        XCTAssertEqual(lines.last, "line 1000")
+    }
+
+    func testTailMissingFile() {
+        XCTAssertNil(LogTail.tail(path: "/nonexistent/\(UUID().uuidString)"))
+    }
+}
