@@ -55,7 +55,11 @@ final class DomainSidebarController: NSViewController {
         refreshButton.target = self
         refreshButton.action = #selector(refreshClicked)
 
-        let stack = NSStackView(views: [searchField, scrollView, refreshButton])
+        let sectionLabel = NSTextField(labelWithString: "Service Type")
+        sectionLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        sectionLabel.textColor = .secondaryLabelColor
+
+        let stack = NSStackView(views: [searchField, sectionLabel, scrollView, refreshButton])
         stack.orientation = .vertical
         stack.spacing = 8
         stack.edgeInsets = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
