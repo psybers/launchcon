@@ -1,0 +1,35 @@
+name: LaunchCon
+options:
+  bundleIdPrefix: com.example
+  createIntermediateGroups: true
+targets:
+  LaunchCon:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: LaunchCon
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.LaunchCon
+        PRODUCT_NAME: LaunchCon
+        INFOPLIST_KEY_CFBundleDisplayName: LaunchController
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+  LaunchConTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: LaunchConTests
+    dependencies:
+      - target: LaunchCon
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.0"
