@@ -6,6 +6,9 @@ final class JobDetailController: NSViewController {
     private let scrollView = NSScrollView()
     private let stackView = NSStackView()
     private var valueLabels: [String: NSTextField] = [:]
+    private let editButton = NSButton(title: "Edit Property List…", target: nil, action: nil)
+    private var currentJob: Job?
+    var onEdit: ((Job) -> Void)?
 
     /// Approximate width that fits the row titles plus a typical value.
     static var fitWidth: CGFloat {
@@ -53,6 +56,13 @@ final class JobDetailController: NSViewController {
             valueLabels[row.key] = valueLabel
         }
 
+        editButton.bezelStyle = .rounded
+        editButton.target = self
+        editButton.action = #selector(editClicked)
+        editButton.alignment = .left
+
+        stackView.addArrangedSubview(editButton)
+
         scrollView.documentView = stackView
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
@@ -71,7 +81,14 @@ final class JobDetailController: NSViewController {
         view = container
     }
 
+    @objc private func editClicked() {
+        guard let job = currentJob, job.plistPath != nil else { return }
+        onEdit?(job)
+    }
+
     func show(job: Job?) {
+        currentJob = job
+        editButton.isEnabled = job?.plistPath != nil
         guard let job else {
             for (_, label) in valueLabels { label.stringValue = "—" }
             return

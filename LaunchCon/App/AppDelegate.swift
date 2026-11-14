@@ -54,6 +54,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             item.target = jobTarget
             return item
         }
+        jobMenu.addItem(jobItem("New Job…", #selector(MainWindowController.newJob(_:)), "n"))
+        jobMenu.addItem(.separator())
         jobMenu.addItem(jobItem("Load", #selector(MainWindowController.jobLoad(_:))))
         jobMenu.addItem(jobItem("Unload", #selector(MainWindowController.jobUnload(_:))))
         jobMenu.addItem(.separator())
@@ -62,6 +64,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         jobMenu.addItem(.separator())
         jobMenu.addItem(jobItem("Start", #selector(MainWindowController.jobStart(_:))))
         jobMenu.addItem(jobItem("Stop", #selector(MainWindowController.jobStop(_:))))
+        jobMenu.addItem(.separator())
+        jobMenu.addItem(jobItem("Save", #selector(MainWindowController.saveEditor(_:)), "s"))
         jobMenu.addItem(.separator())
         jobMenu.addItem(jobItem("Refresh", #selector(MainWindowController.jobRefresh(_:)), "r"))
 

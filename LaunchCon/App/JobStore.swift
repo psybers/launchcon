@@ -128,6 +128,13 @@ final class JobStore {
         await MainActor.run { self.reload() }
     }
 
+    /// Unloads and re-bootstraps a service so plist changes take effect.
+    func reloadService(label: String, domain: LaunchdDomain, plistPath: String) async throws {
+        try await Launchctl.unload(label: label, domain: domain)
+        try await Launchctl.load(plistPath: plistPath, domain: domain)
+        await MainActor.run { self.reload() }
+    }
+
     private func load() async {
         guard let group = selectedGroup else {
             await MainActor.run {
