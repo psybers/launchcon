@@ -30,7 +30,7 @@ final class JobStore {
             ),
             DomainGroup(
                 title: "LaunchAgents",
-                launchdDomain: nil,
+                launchdDomain: .guiCurrentUser,
                 plistDirectories: [URL(fileURLWithPath: "/Library/LaunchAgents")]
             ),
             DomainGroup(
@@ -100,10 +100,24 @@ final class JobStore {
             self.notifyChange()
         }
 
+        // 1. Discover plists in this group's directories, keyed by Label.
+        var discovered: [String: (url: URL, dict: [String: Any])] = [:]
+        for directory in group.plistDirectories {
+            for plistURL in Self.plistFiles(in: directory) {
+                guard let dict = Plist.load(plistURL),
+                      let label = Plist.label(in: dict)
+                else { continue }
+                discovered[label] = (plistURL, dict)
+            }
+        }
+
         var loaded: [Job] = []
         var disabledLabels = Set<String>()
         var firstError: String?
 
+        // 2. If the group maps to a launchd domain, keep only jobs that
+        //    correspond to this group's plists — the domain contains many
+        //    unrelated services (e.g. all of Apple's session agents).
         if let domain = group.launchdDomain {
             do {
                 disabledLabels = try await Launchctl.printDisabled(domain: domain)
@@ -111,35 +125,34 @@ final class JobStore {
                 firstError = firstError ?? "print-disabled: \(error.localizedDescription)"
             }
             do {
-                loaded = try await Launchctl.list(domain: domain)
+                let all = try await Launchctl.list(domain: domain)
+                for var job in all where discovered[job.label] != nil {
+                    job.domain = domain
+                    job.plistPath = discovered[job.label]?.url.path
+                    job.plist = discovered[job.label]?.dict
+                    job.isLoaded = true
+                    loaded.append(job)
+                }
             } catch {
                 firstError = firstError ?? "list: \(error.localizedDescription)"
             }
         }
 
-        // Merge in plist files that aren't currently loaded.
-        var knownLabels = Set(loaded.map(\.label))
-        for directory in group.plistDirectories {
-            for plistURL in Self.plistFiles(in: directory) {
-                guard let dict = Plist.load(plistURL),
-                      let label = Plist.label(in: dict),
-                      !knownLabels.contains(label)
-                else { continue }
-                knownLabels.insert(label)
-
-                let domain = group.launchdDomain
-                    ?? LaunchdDomain(rawValue: directory.path)
-                loaded.append(Job(
-                    label: label,
-                    pid: nil,
-                    lastExitStatus: nil,
-                    domain: domain,
-                    plistPath: plistURL.path,
-                    isLoaded: false,
-                    isDisabled: false,
-                    plist: dict
-                ))
-            }
+        // 3. Add discovered plists that aren't currently loaded.
+        let loadedLabels = Set(loaded.map(\.label))
+        for (label, entry) in discovered where !loadedLabels.contains(label) {
+            let domain = group.launchdDomain
+                ?? LaunchdDomain(rawValue: entry.url.deletingLastPathComponent().path)
+            loaded.append(Job(
+                label: label,
+                pid: nil,
+                lastExitStatus: nil,
+                domain: domain,
+                plistPath: entry.url.path,
+                isLoaded: false,
+                isDisabled: false,
+                plist: entry.dict
+            ))
         }
 
         for index in loaded.indices where disabledLabels.contains(loaded[index].label) {
