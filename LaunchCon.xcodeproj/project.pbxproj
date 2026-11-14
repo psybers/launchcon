@@ -19,8 +19,11 @@
 		68AF51FE0718A4EDDD854DB5 /* Launchctl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6014E89288243DFB34C7F9F1 /* Launchctl.swift */; };
 		85946A95856EA0AFF816D11C /* JobEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE0A71C9AC041A8417CE91F /* JobEditorViewController.swift */; };
 		B45CB3A2D43FA4AAA174C9E1 /* JobListController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7BE7740A974E13A606900C /* JobListController.swift */; };
+		B486D7D5FBAA6B5E4D95940C /* ServicePrintParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03715B1E16B29555642BC35A /* ServicePrintParser.swift */; };
 		BE18060A71ABB1EDF196BDFB /* PlistDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA292D5CE92B706D090E710 /* PlistDocument.swift */; };
+		D89DE26CB8E76C9B38C4ED57 /* JobValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F791AB9152CA1538034DF232 /* JobValidator.swift */; };
 		DBAE86ED803FE0A9E95ADC22 /* JobEditorWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759908A2B3C8D3AC04B80BCA /* JobEditorWindowController.swift */; };
+		E0BDE7894CD087572792FBC4 /* LogTail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BFC5374C53FA61F4E391D0 /* LogTail.swift */; };
 		F3223517E2A05032AACFFF3E /* Job.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6880076580CF97AE6FF4178C /* Job.swift */; };
 		FD4ABF3E61C18F14CB658C3F /* JobStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3910F2E0E194165736F12301 /* JobStore.swift */; };
 		FE9E3A7836EEB53A27D7BC01 /* DomainSidebarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD25DBF30E9A5F5104718EAA /* DomainSidebarController.swift */; };
@@ -37,6 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		03715B1E16B29555642BC35A /* ServicePrintParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicePrintParser.swift; sourceTree = "<group>"; };
 		1BE0A71C9AC041A8417CE91F /* JobEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobEditorViewController.swift; sourceTree = "<group>"; };
 		3910F2E0E194165736F12301 /* JobStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobStore.swift; sourceTree = "<group>"; };
 		3DA292D5CE92B706D090E710 /* PlistDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlistDocument.swift; sourceTree = "<group>"; };
@@ -50,10 +54,12 @@
 		84B1A0D03BFD66A0F7EE483D /* LaunchdDomain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchdDomain.swift; sourceTree = "<group>"; };
 		889377DDFAD4784AEECB15E7 /* LaunchConTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchConTests.swift; sourceTree = "<group>"; };
 		8F62B3B5A53C8218D6908ACE /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
+		97BFC5374C53FA61F4E391D0 /* LogTail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogTail.swift; sourceTree = "<group>"; };
 		ADF66B2DA6655E439A3A5A38 /* LaunchCon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LaunchCon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D090D726ECF6363E913D089F /* LaunchConTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LaunchConTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D45611FC4ED1230595AD1009 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		F17D3FEB56B89F1A8634B07E /* JobKeySchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobKeySchema.swift; sourceTree = "<group>"; };
+		F791AB9152CA1538034DF232 /* JobValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobValidator.swift; sourceTree = "<group>"; };
 		FD25DBF30E9A5F5104718EAA /* DomainSidebarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainSidebarController.swift; sourceTree = "<group>"; };
 		FE51A2B1756F516975FBDEB1 /* CalendarIntervalEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarIntervalEditor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -91,10 +97,13 @@
 			children = (
 				6880076580CF97AE6FF4178C /* Job.swift */,
 				F17D3FEB56B89F1A8634B07E /* JobKeySchema.swift */,
+				F791AB9152CA1538034DF232 /* JobValidator.swift */,
 				6014E89288243DFB34C7F9F1 /* Launchctl.swift */,
 				84B1A0D03BFD66A0F7EE483D /* LaunchdDomain.swift */,
+				97BFC5374C53FA61F4E391D0 /* LogTail.swift */,
 				7D32C23D7B1EC449DD2C577F /* Plist.swift */,
 				3DA292D5CE92B706D090E710 /* PlistDocument.swift */,
+				03715B1E16B29555642BC35A /* ServicePrintParser.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -211,11 +220,14 @@
 				408CF73D4CF769438F662831 /* JobKeySchema.swift in Sources */,
 				B45CB3A2D43FA4AAA174C9E1 /* JobListController.swift in Sources */,
 				FD4ABF3E61C18F14CB658C3F /* JobStore.swift in Sources */,
+				D89DE26CB8E76C9B38C4ED57 /* JobValidator.swift in Sources */,
 				68AF51FE0718A4EDDD854DB5 /* Launchctl.swift in Sources */,
 				14653E48802DD36E3D79AAAC /* LaunchdDomain.swift in Sources */,
+				E0BDE7894CD087572792FBC4 /* LogTail.swift in Sources */,
 				254FADEFD122C11BACABF59B /* MainWindowController.swift in Sources */,
 				32F663FC06358B2EF0A18EFA /* Plist.swift in Sources */,
 				BE18060A71ABB1EDF196BDFB /* PlistDocument.swift in Sources */,
+				B486D7D5FBAA6B5E4D95940C /* ServicePrintParser.swift in Sources */,
 				0BB59315ADA7A06446A3C712 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
