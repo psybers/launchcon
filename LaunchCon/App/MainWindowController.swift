@@ -52,6 +52,9 @@ final class MainWindowController: NSWindowController {
         detailVC.onEdit = { [weak self] job in
             self?.openEditor(for: job)
         }
+        list.onDoubleClick = { [weak self] job in
+            self?.openEditor(for: job)
+        }
     }
 
     @available(*, unavailable)

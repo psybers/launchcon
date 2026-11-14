@@ -23,6 +23,8 @@ final class JobListController: NSViewController {
     var onSelectionChange: ((Job?) -> Void)?
     /// Called with the job action and the selected job when a menu item is chosen.
     var onJobAction: ((JobStore.JobAction, Job) -> Void)?
+    /// Called when a row is double-clicked.
+    var onDoubleClick: ((Job) -> Void)?
 
     init(store: JobStore) {
         self.store = store
@@ -55,6 +57,8 @@ final class JobListController: NSViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.menu = buildJobMenu()
+        tableView.target = self
+        tableView.doubleAction = #selector(rowDoubleClicked)
         tableView.usesAutomaticRowHeights = true
         tableView.rowSizeStyle = .default
 
@@ -126,6 +130,11 @@ final class JobListController: NSViewController {
     private func performAction(_ action: JobStore.JobAction) {
         guard let job = selectedJob() else { return }
         onJobAction?(action, job)
+    }
+
+    @objc private func rowDoubleClicked() {
+        guard let job = selectedJob() else { return }
+        onDoubleClick?(job)
     }
 
     @objc private func jobLoad(_ sender: Any?) { performAction(.load) }
