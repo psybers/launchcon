@@ -11,6 +11,7 @@ final class JobEditorViewController: NSViewController {
     private let formStack = NSStackView()
     private var controls: [String: NSControl] = [:]
     private var textViews: [String: NSTextView] = [:]
+    private var calendarEditors: [String: CalendarIntervalEditor] = [:]
     private var statusLabel: NSTextField!
     private var saveButton: NSButton!
 
@@ -107,9 +108,25 @@ final class JobEditorViewController: NSViewController {
             return value == nil || value is [String] ? .stringList : .unsupported
         case .stringMap:
             return value == nil || value is [String: Any] ? .stringMap : .unsupported
+        case .calendarInterval:
+            return isCalendarIntervalValue(value) ? .calendarInterval : .unsupported
         default:
             return schema.kind
         }
+    }
+
+    /// Accepts nil, a dict of numbers, or an array of dicts of numbers.
+    private func isCalendarIntervalValue(_ value: Any?) -> Bool {
+        if value == nil { return true }
+        if let dict = value as? [String: Any] {
+            return dict.values.allSatisfy { $0 is NSNumber }
+        }
+        if let array = value as? [Any] {
+            return array.allSatisfy {
+                ($0 as? [String: Any])?.values.allSatisfy { $0 is NSNumber } ?? false
+            }
+        }
+        return false
     }
 
     private func buildRows() {
@@ -189,6 +206,12 @@ final class JobEditorViewController: NSViewController {
             let text = dict.keys.sorted().map { "\($0)=\(dict[$0] ?? "")" }.joined(separator: "\n")
             return makeTextEditor(key: schema.key, text: text,
                                   placeholder: "KEY=VALUE, one per line")
+
+        case .calendarInterval:
+            let editor = CalendarIntervalEditor(value: value)
+            editor.onChange = { [weak self] in self?.markDirty() }
+            calendarEditors[schema.key] = editor
+            return editor
 
         case .unsupported:
             let field = NSTextField(labelWithString: describe(value))
@@ -277,6 +300,7 @@ final class JobEditorViewController: NSViewController {
     @objc func save() {
         var newContents = document.contents
         var integerError: String?
+        var calendarError: String?
 
         for schema in JobKeySchema.all {
             let kind = effectiveKind(for: schema)
@@ -328,15 +352,31 @@ final class JobEditorViewController: NSViewController {
                 }
                 if map.isEmpty { newContents.removeValue(forKey: key) } else { newContents[key] = map }
 
+            case .calendarInterval:
+                guard let editor = calendarEditors[key] else { continue }
+                if editor.hasInvalidInput {
+                    calendarError = schema.title
+                    continue
+                }
+                if let plistValue = editor.plistValue {
+                    newContents[key] = plistValue
+                } else {
+                    newContents.removeValue(forKey: key)
+                }
+
             case .unsupported:
                 continue // preserve existing value untouched
             }
         }
 
-        if let integerError {
+        if integerError != nil || calendarError != nil {
             let alert = NSAlert()
             alert.messageText = "Invalid value"
-            alert.informativeText = "\(integerError) must be an integer."
+            if let integerError {
+                alert.informativeText = "\(integerError) must be an integer."
+            } else {
+                alert.informativeText = "\(calendarError!) contains a non-integer value."
+            }
             alert.alertStyle = .warning
             alert.runModal()
             return

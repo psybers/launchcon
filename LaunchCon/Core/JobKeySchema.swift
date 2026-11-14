@@ -14,6 +14,8 @@ enum PlistEditorKind {
     case stringMap
     /// Popup with fixed options.
     case popup([String])
+    /// `StartCalendarInterval`-style schedule (dict or array of dicts).
+    case calendarInterval
     /// Value exists but has no simple editor (dicts, calendar intervals, etc.).
     case unsupported
 }
@@ -32,7 +34,7 @@ struct JobKeySchema {
         JobKeySchema(key: "RunAtLoad", title: "Run at Load", kind: .bool, isPath: false),
         JobKeySchema(key: "KeepAlive", title: "Keep Alive", kind: .bool, isPath: false),
         JobKeySchema(key: "StartInterval", title: "Start Interval", kind: .integer, isPath: false),
-        JobKeySchema(key: "StartCalendarInterval", title: "Start Calendar Interval", kind: .unsupported, isPath: false),
+        JobKeySchema(key: "StartCalendarInterval", title: "Start Calendar Interval", kind: .calendarInterval, isPath: false),
         JobKeySchema(key: "WorkingDirectory", title: "Working Directory", kind: .string, isPath: true),
         JobKeySchema(key: "StandardOutPath", title: "Standard Output", kind: .string, isPath: true),
         JobKeySchema(key: "StandardErrorPath", title: "Standard Error", kind: .string, isPath: true),

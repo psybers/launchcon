@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		06010E1581C2371623E45540 /* LaunchConTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889377DDFAD4784AEECB15E7 /* LaunchConTests.swift */; };
 		0BB59315ADA7A06446A3C712 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D09E9DC5DF6F6547A168C84 /* main.swift */; };
+		13CC3F7826C232E166648188 /* CalendarIntervalEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE51A2B1756F516975FBDEB1 /* CalendarIntervalEditor.swift */; };
 		14653E48802DD36E3D79AAAC /* LaunchdDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B1A0D03BFD66A0F7EE483D /* LaunchdDomain.swift */; };
 		22E58200C48BA01055108FD7 /* JobDetailController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D0FEEE8989C182DFC7D6CA /* JobDetailController.swift */; };
 		254FADEFD122C11BACABF59B /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F62B3B5A53C8218D6908ACE /* MainWindowController.swift */; };
@@ -54,6 +55,7 @@
 		D45611FC4ED1230595AD1009 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		F17D3FEB56B89F1A8634B07E /* JobKeySchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobKeySchema.swift; sourceTree = "<group>"; };
 		FD25DBF30E9A5F5104718EAA /* DomainSidebarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainSidebarController.swift; sourceTree = "<group>"; };
+		FE51A2B1756F516975FBDEB1 /* CalendarIntervalEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarIntervalEditor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -101,6 +103,7 @@
 			isa = PBXGroup;
 			children = (
 				D45611FC4ED1230595AD1009 /* AppDelegate.swift */,
+				FE51A2B1756F516975FBDEB1 /* CalendarIntervalEditor.swift */,
 				FD25DBF30E9A5F5104718EAA /* DomainSidebarController.swift */,
 				61D0FEEE8989C182DFC7D6CA /* JobDetailController.swift */,
 				1BE0A71C9AC041A8417CE91F /* JobEditorViewController.swift */,
@@ -199,6 +202,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6568BE20A195DBCAD9586C49 /* AppDelegate.swift in Sources */,
+				13CC3F7826C232E166648188 /* CalendarIntervalEditor.swift in Sources */,
 				FE9E3A7836EEB53A27D7BC01 /* DomainSidebarController.swift in Sources */,
 				F3223517E2A05032AACFFF3E /* Job.swift in Sources */,
 				22E58200C48BA01055108FD7 /* JobDetailController.swift in Sources */,
