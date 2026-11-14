@@ -81,7 +81,7 @@ final class JobListController: NSViewController {
     func refresh() {
         tableView.reloadData()
         emptyLabel.isHidden = !store.visibleJobs.isEmpty || store.isLoading
-        emptyLabel.stringValue = store.isLoading ? "Loading…" : "No jobs"
+        emptyLabel.stringValue = store.isLoading ? "Loading…" : (store.loadError ?? "No jobs")
     }
 
     func selectedJob() -> Job? {

@@ -163,8 +163,15 @@ enum Launchctl {
     }
 
     /// Low-level process execution. Returns (stdout, stderr, exitStatus).
+    /// Pipes are drained concurrently to avoid deadlock when output exceeds
+    /// the pipe buffer (e.g. `launchctl print <domain>` for large domains).
     static func launchctl(_ arguments: [String]) async throws -> (stdout: String, stderr: String, status: Int32) {
-        try await withCheckedThrowingContinuation { continuation in
+        final class PipeData: @unchecked Sendable {
+            var stdout = Data()
+            var stderr = Data()
+        }
+
+        return try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             process.executableURL = executableURL
             process.arguments = arguments
@@ -174,17 +181,33 @@ enum Launchctl {
             process.standardOutput = stdoutPipe
             process.standardError = stderrPipe
 
+            let pipeData = PipeData()
+            let group = DispatchGroup()
+
+            group.enter()
+            DispatchQueue.global().async {
+                pipeData.stdout = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+                group.leave()
+            }
+            group.enter()
+            DispatchQueue.global().async {
+                pipeData.stderr = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                group.leave()
+            }
+
             process.terminationHandler = { proc in
-                let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                let stdout = String(data: stdoutData, encoding: .utf8) ?? ""
-                let stderr = String(data: stderrData, encoding: .utf8) ?? ""
-                continuation.resume(returning: (stdout, stderr, proc.terminationStatus))
+                group.notify(queue: .global()) {
+                    let stdout = String(data: pipeData.stdout, encoding: .utf8) ?? ""
+                    let stderr = String(data: pipeData.stderr, encoding: .utf8) ?? ""
+                    continuation.resume(returning: (stdout, stderr, proc.terminationStatus))
+                }
             }
 
             do {
                 try process.run()
             } catch {
+                try? stdoutPipe.fileHandleForWriting.close()
+                try? stderrPipe.fileHandleForWriting.close()
                 continuation.resume(throwing: LaunchctlError.executableNotFound)
             }
         }

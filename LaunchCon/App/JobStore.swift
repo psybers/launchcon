@@ -55,6 +55,8 @@ final class JobStore {
 
     private(set) var jobs: [Job] = []
     private(set) var isLoading = false
+    /// Description of the last load failure, if any.
+    private(set) var loadError: String?
 
     var selectedGroup: DomainGroup? {
         didSet { reload() }
@@ -100,13 +102,18 @@ final class JobStore {
 
         var loaded: [Job] = []
         var disabledLabels = Set<String>()
+        var firstError: String?
 
         if let domain = group.launchdDomain {
-            if let disabled = try? await Launchctl.printDisabled(domain: domain) {
-                disabledLabels = disabled
+            do {
+                disabledLabels = try await Launchctl.printDisabled(domain: domain)
+            } catch {
+                firstError = firstError ?? "print-disabled: \(error.localizedDescription)"
             }
-            if let listed = try? await Launchctl.list(domain: domain) {
-                loaded = listed
+            do {
+                loaded = try await Launchctl.list(domain: domain)
+            } catch {
+                firstError = firstError ?? "list: \(error.localizedDescription)"
             }
         }
 
@@ -144,6 +151,7 @@ final class JobStore {
         await MainActor.run {
             self.jobs = loaded
             self.isLoading = false
+            self.loadError = firstError
             self.notifyChange()
         }
     }
