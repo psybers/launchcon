@@ -10,8 +10,6 @@ final class JobStore {
         let title: String
         /// Domain queried for live job state, if any.
         let launchdDomain: LaunchdDomain?
-        /// Domain used when bootstrapping/loading a plist from this group.
-        let bootstrapDomain: LaunchdDomain
         let plistDirectories: [URL]
 
         var id: String { title }
@@ -24,36 +22,44 @@ final class JobStore {
         return url
     }
 
+    static let allPlistDirectories: [URL] = [
+        homeLibrary("LaunchAgents"),
+        URL(fileURLWithPath: "/Library/LaunchAgents"),
+        URL(fileURLWithPath: "/Library/LaunchDaemons"),
+        URL(fileURLWithPath: "/System/Library/LaunchAgents"),
+        URL(fileURLWithPath: "/System/Library/LaunchDaemons"),
+    ]
+
     static func defaultGroups() -> [DomainGroup] {
         [
             DomainGroup(
+                title: "All",
+                launchdDomain: .guiCurrentUser,
+                plistDirectories: allPlistDirectories
+            ),
+            DomainGroup(
                 title: "User Agents",
                 launchdDomain: .guiCurrentUser,
-                bootstrapDomain: .guiCurrentUser,
                 plistDirectories: [homeLibrary("LaunchAgents")]
             ),
             DomainGroup(
                 title: "LaunchAgents",
                 launchdDomain: .guiCurrentUser,
-                bootstrapDomain: .guiCurrentUser,
                 plistDirectories: [URL(fileURLWithPath: "/Library/LaunchAgents")]
             ),
             DomainGroup(
                 title: "LaunchDaemons",
                 launchdDomain: nil,
-                bootstrapDomain: .system,
                 plistDirectories: [URL(fileURLWithPath: "/Library/LaunchDaemons")]
             ),
             DomainGroup(
                 title: "System Agents",
                 launchdDomain: nil,
-                bootstrapDomain: .guiCurrentUser,
                 plistDirectories: [URL(fileURLWithPath: "/System/Library/LaunchAgents")]
             ),
             DomainGroup(
                 title: "System Daemons",
                 launchdDomain: nil,
-                bootstrapDomain: .system,
                 plistDirectories: [URL(fileURLWithPath: "/System/Library/LaunchDaemons")]
             ),
         ]
@@ -182,7 +188,7 @@ final class JobStore {
                 label: label,
                 pid: nil,
                 lastExitStatus: nil,
-                domain: group.bootstrapDomain,
+                domain: LaunchdDomain.bootstrapDomain(forPlistAt: entry.url),
                 plistPath: entry.url.path,
                 isLoaded: false,
                 isDisabled: false,

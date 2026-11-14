@@ -52,4 +52,10 @@ struct LaunchdDomain: Hashable, CustomStringConvertible {
     static func session(asid: UInt32) -> LaunchdDomain {
         LaunchdDomain(rawValue: "session/\(asid)")
     }
+
+    /// The domain a plist at the given path should be bootstrapped into.
+    /// Agents load into the user's GUI session; daemons into the system domain.
+    static func bootstrapDomain(forPlistAt url: URL) -> LaunchdDomain {
+        url.path.contains("LaunchDaemons") ? .system : .guiCurrentUser
+    }
 }
