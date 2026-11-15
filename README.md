@@ -74,8 +74,6 @@ LaunchCon/
   App/                 AppKit UI (windows, views, editor)
   Core/                launchctl wrapper, parsers, plist & validation logic
 LaunchConTests/        XCTest suite for parsers, plist handling, validator, log tailing
-OVERVIEW.md            Original product overview
-PLAN.md                Phased development plan
 ```
 
 ## Notes
