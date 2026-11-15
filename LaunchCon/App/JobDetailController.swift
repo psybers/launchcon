@@ -1,9 +1,8 @@
 import AppKit
 
-/// Flipped stack view: arranged subviews lay out top-to-bottom, so extra
-/// space in a stretched document goes to the bottom, not the top.
-private final class FlippedStackView: NSStackView {
-    override var isFlipped: Bool { true }
+/// Document container: holds `content` top-aligned and is exactly as tall as
+/// the content, but never shorter than the scroll view's clip area.
+private final class DocumentContainerView: NSView {
 }
 
 /// Right-hand inspector: Info (plist summary + diagnostics), live launchd
@@ -27,14 +26,14 @@ final class JobDetailController: NSViewController {
 
     // Info tab
     private let infoScroll = NSScrollView()
-    private let infoStack = FlippedStackView()
+    private let infoStack = NSStackView()
     private var valueLabels: [String: NSTextField] = [:]
     private let diagnosticsContainer = NSStackView()
     private let editButton = NSButton(title: "Edit Property List…", target: nil, action: nil)
 
     // State tab
     private let stateScroll = NSScrollView()
-    private let stateOuterStack = FlippedStackView()
+    private let stateOuterStack = NSStackView()
     private let stateRowsStack = NSStackView()
     private let stateStatusLabel = NSTextField(labelWithString: "")
     private let stateRefreshButton = NSButton(title: "Refresh", target: nil, action: nil)
@@ -180,6 +179,12 @@ final class JobDetailController: NSViewController {
         editButton.alignment = .left
         infoStack.addArrangedSubview(editButton)
 
+        // Absorbs extra height so arranged views stay top-aligned when the
+        // document is stretched to fill the clip view.
+        let spacer = NSView()
+        spacer.setContentHuggingPriority(.init(1), for: .vertical)
+        infoStack.addArrangedSubview(spacer)
+
         embedInScroll(infoScroll, content: infoStack)
     }
 
@@ -269,6 +274,9 @@ final class JobDetailController: NSViewController {
 
         stateOuterStack.addArrangedSubview(toolbar)
         stateOuterStack.addArrangedSubview(stateRowsStack)
+        let spacer = NSView()
+        spacer.setContentHuggingPriority(.init(1), for: .vertical)
+        stateOuterStack.addArrangedSubview(spacer)
         embedInScroll(stateScroll, content: stateOuterStack)
     }
 
@@ -396,17 +404,32 @@ final class JobDetailController: NSViewController {
         scrollView.borderType = .noBorder
     }
 
-    /// Uses `content` directly as the scroll document, constrained to be at
-    /// least as tall as the clip view so short content top-aligns.
+    /// Wraps `content` in a container pinned to the top. The container is as
+    /// tall as the content, but at least as tall as the clip view — so short
+    /// content top-aligns with whitespace below, and tall content scrolls.
+    /// `content` gets required vertical hugging so Auto Layout can't stretch
+    /// it to satisfy the container's height.
     private func embedInScroll(_ scrollView: NSScrollView, content: NSView) {
-        scrollView.documentView = content
+        let container = DocumentContainerView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        content.translatesAutoresizingMaskIntoConstraints = false
+        content.setContentHuggingPriority(.required, for: .vertical)
+        container.addSubview(content)
+        scrollView.documentView = container
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
 
+        let heightMatch = container.heightAnchor.constraint(equalTo: content.heightAnchor)
+        heightMatch.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
-            content.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.heightAnchor),
-            content.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
+            content.topAnchor.constraint(equalTo: container.topAnchor),
+            content.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            heightMatch,
+            container.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.heightAnchor),
+            container.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
         ])
     }
 
