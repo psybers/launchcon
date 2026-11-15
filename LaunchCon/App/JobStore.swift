@@ -101,7 +101,40 @@ final class JobStore {
         didSet { reload() }
     }
 
+    /// Sidebar state filters; unchecked filters hide matching jobs.
+    enum JobFilter: String, CaseIterable {
+        case loaded, unloaded, disabled, enabled, running, stopped
+
+        var title: String {
+            switch self {
+            case .loaded: return "Loaded"
+            case .unloaded: return "Unloaded"
+            case .disabled: return "Disabled"
+            case .enabled: return "Enabled"
+            case .running: return "Running"
+            case .stopped: return "Stopped"
+            }
+        }
+
+        func matches(_ job: Job) -> Bool {
+            switch self {
+            case .loaded: return job.isLoaded
+            case .unloaded: return !job.isLoaded
+            case .disabled: return job.isDisabled
+            case .enabled: return !job.isDisabled
+            case .running: return job.pid != nil
+            case .stopped: return job.pid == nil
+            }
+        }
+    }
+
     var filterText = "" {
+        didSet { notifyChange() }
+    }
+
+    /// Filters unchecked in the sidebar. A job is hidden when it matches any
+    /// filter in this set.
+    var disabledFilters: Set<JobFilter> = [] {
         didSet { notifyChange() }
     }
 
@@ -115,9 +148,15 @@ final class JobStore {
     }
 
     var visibleJobs: [Job] {
+        var result = jobs
+        if !disabledFilters.isEmpty {
+            result = result.filter { job in
+                !disabledFilters.contains { $0.matches(job) }
+            }
+        }
         let filter = filterText.trimmingCharacters(in: .whitespaces)
-        guard !filter.isEmpty else { return jobs }
-        return jobs.filter { $0.label.localizedCaseInsensitiveContains(filter) }
+        guard !filter.isEmpty else { return result }
+        return result.filter { $0.label.localizedCaseInsensitiveContains(filter) }
     }
 
     func reload() {

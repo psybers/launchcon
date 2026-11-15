@@ -48,6 +48,7 @@ final class DomainSidebarController: NSViewController {
 
         scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
         scrollView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -59,7 +60,24 @@ final class DomainSidebarController: NSViewController {
         sectionLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         sectionLabel.textColor = .secondaryLabelColor
 
-        let stack = NSStackView(views: [searchField, sectionLabel, scrollView, refreshButton])
+        let filtersLabel = NSTextField(labelWithString: "Filters")
+        filtersLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        filtersLabel.textColor = .secondaryLabelColor
+
+        var filterButtons: [NSButton] = []
+        for (index, filter) in JobStore.JobFilter.allCases.enumerated() {
+            let button = NSButton(checkboxWithTitle: filter.title, target: self, action: #selector(filterCheckboxChanged(_:)))
+            button.state = .on
+            button.tag = index
+            button.controlSize = .small
+            filterButtons.append(button)
+        }
+        let filtersStack = NSStackView(views: filterButtons)
+        filtersStack.orientation = .vertical
+        filtersStack.alignment = .leading
+        filtersStack.spacing = 2
+
+        let stack = NSStackView(views: [searchField, sectionLabel, scrollView, filtersLabel, filtersStack, refreshButton])
         stack.orientation = .vertical
         stack.spacing = 8
         stack.edgeInsets = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
@@ -85,6 +103,17 @@ final class DomainSidebarController: NSViewController {
 
     @objc private func filterChanged() {
         store.filterText = searchField.stringValue
+    }
+
+    @objc private func filterCheckboxChanged(_ sender: NSButton) {
+        guard let stack = sender.superview as? NSStackView else { return }
+        var disabled = Set<JobStore.JobFilter>()
+        for case let button as NSButton in stack.arrangedSubviews {
+            if button.state == .off, button.tag < JobStore.JobFilter.allCases.count {
+                disabled.insert(JobStore.JobFilter.allCases[button.tag])
+            }
+        }
+        store.disabledFilters = disabled
     }
 
     @objc private func refreshClicked() {
