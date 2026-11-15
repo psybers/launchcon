@@ -93,7 +93,7 @@ private final class ScheduleView: NSView {
 
     private var fields: [String: NSTextField] = [:]
 
-    private static let firstRowKeys = ["Second", "Minute", "Hour"]
+    private static let firstRowKeys = ["Hour", "Minute", "Second"]
     private static let secondRowKeys = ["Day", "Month", "Weekday"]
 
     /// The schedule as [String: Int], or nil if every field is empty.
