@@ -1,8 +1,8 @@
 import AppKit
 
-/// Flipped document view so scroll content top-aligns when shorter than
-/// the clip view.
-private final class DocumentContainerView: NSView {
+/// Flipped stack view: arranged subviews lay out top-to-bottom, so extra
+/// space in a stretched document goes to the bottom, not the top.
+private final class FlippedStackView: NSStackView {
     override var isFlipped: Bool { true }
 }
 
@@ -27,14 +27,14 @@ final class JobDetailController: NSViewController {
 
     // Info tab
     private let infoScroll = NSScrollView()
-    private let infoStack = NSStackView()
+    private let infoStack = FlippedStackView()
     private var valueLabels: [String: NSTextField] = [:]
     private let diagnosticsContainer = NSStackView()
     private let editButton = NSButton(title: "Edit Property List…", target: nil, action: nil)
 
     // State tab
     private let stateScroll = NSScrollView()
-    private let stateOuterStack = NSStackView()
+    private let stateOuterStack = FlippedStackView()
     private let stateRowsStack = NSStackView()
     private let stateStatusLabel = NSTextField(labelWithString: "")
     private let stateRefreshButton = NSButton(title: "Refresh", target: nil, action: nil)
@@ -111,18 +111,21 @@ final class JobDetailController: NSViewController {
             ])
         }
 
-        let root = NSStackView(views: [segmented, content])
-        root.orientation = .vertical
-        root.spacing = 8
-        root.edgeInsets = NSEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
-        root.translatesAutoresizingMaskIntoConstraints = false
-
-        container.addSubview(root)
+        // Manual layout: the segmented control sits at the top and the tab
+        // content fills all remaining height (a stack view would give the
+        // scroll views only their tiny fitting height).
+        segmented.translatesAutoresizingMaskIntoConstraints = false
+        content.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(segmented)
+        container.addSubview(content)
         NSLayoutConstraint.activate([
-            root.topAnchor.constraint(equalTo: container.topAnchor),
-            root.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            root.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            root.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            segmented.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
+            segmented.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 10),
+            segmented.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -10),
+            content.topAnchor.constraint(equalTo: segmented.bottomAnchor, constant: 8),
+            content.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 10),
+            content.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -10),
+            content.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -10),
         ])
 
         view = container
@@ -201,6 +204,10 @@ final class JobDetailController: NSViewController {
         header.textColor = .secondaryLabelColor
         diagnosticsContainer.addArrangedSubview(header)
 
+        // Fill the info stack's width so messages wrap across the pane.
+        diagnosticsContainer.widthAnchor.constraint(
+            equalTo: infoStack.widthAnchor, constant: -12).isActive = true
+
         for diagnostic in diagnostics {
             let (symbol, color): (String, NSColor) = {
                 switch diagnostic.severity {
@@ -226,6 +233,10 @@ final class JobDetailController: NSViewController {
             row.orientation = .horizontal
             row.spacing = 6
             row.alignment = .top
+            row.widthAnchor.constraint(
+                equalTo: diagnosticsContainer.widthAnchor).isActive = true
+            label.widthAnchor.constraint(
+                equalTo: row.widthAnchor, constant: -20).isActive = true
             diagnosticsContainer.addArrangedSubview(row)
         }
         diagnosticsContainer.isHidden = false
@@ -385,31 +396,17 @@ final class JobDetailController: NSViewController {
         scrollView.borderType = .noBorder
     }
 
-    /// Wraps `content` in a container that is exactly as tall as the content
-    /// but at least as tall as the scroll view's clip area. Short content
-    /// therefore sits at the top of the pane instead of the bottom.
+    /// Uses `content` directly as the scroll document, constrained to be at
+    /// least as tall as the clip view so short content top-aligns.
     private func embedInScroll(_ scrollView: NSScrollView, content: NSView) {
-        let container = DocumentContainerView()
-        container.translatesAutoresizingMaskIntoConstraints = false
-        content.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(content)
-        scrollView.documentView = container
+        scrollView.documentView = content
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
 
-        // Container tracks content height, but never shrinks below the clip
-        // height (required beats the lower-priority height match).
-        let heightMatch = container.heightAnchor.constraint(equalTo: content.heightAnchor)
-        heightMatch.priority = .defaultHigh
-
         NSLayoutConstraint.activate([
-            content.topAnchor.constraint(equalTo: container.topAnchor),
-            content.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            content.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            heightMatch,
-            container.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.heightAnchor),
-            container.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
+            content.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.heightAnchor),
+            content.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
         ])
     }
 
