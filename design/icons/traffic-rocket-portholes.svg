@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2e4a7d"/>
+      <stop offset="1" stop-color="#101c33"/>
+    </linearGradient>
+    <radialGradient id="porthole" cx="0.38" cy="0.32" r="0.95">
+      <stop offset="0" stop-color="#bfe6ff"/>
+      <stop offset="0.5" stop-color="#4a90d9"/>
+      <stop offset="1" stop-color="#1b3a6b"/>
+    </radialGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3a3"/>
+      <stop offset="0.45" stop-color="#ffb340"/>
+      <stop offset="1" stop-color="#ff5f2e" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="fin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#54719f"/>
+      <stop offset="1" stop-color="#2e4066"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="229" fill="url(#bg)"/>
+
+  <!-- swept rocket fins -->
+  <path d="M372 640 C300 720 240 810 196 902 L372 856 Z" fill="url(#fin)"/>
+  <path d="M652 640 C724 720 784 810 828 902 L652 856 Z" fill="url(#fin)"/>
+
+  <!-- body: tall capsule like a traffic light -->
+  <rect x="352" y="150" width="320" height="620" rx="160" fill="#1f2c4a"/>
+  <rect x="352" y="150" width="320" height="620" rx="160" fill="none" stroke="#46628f" stroke-width="6"/>
+
+  <!-- porthole lamps -->
+  <circle cx="512" cy="290" r="92" fill="#10182c"/>
+  <circle cx="512" cy="512" r="92" fill="#10182c"/>
+  <circle cx="512" cy="734" r="92" fill="#10182c"/>
+  <circle cx="512" cy="290" r="76" fill="url(#porthole)"/>
+  <circle cx="512" cy="512" r="76" fill="url(#porthole)"/>
+  <circle cx="512" cy="734" r="76" fill="url(#porthole)"/>
+  <circle cx="486" cy="264" r="18" fill="#ffffff" opacity="0.4"/>
+  <circle cx="486" cy="486" r="18" fill="#ffffff" opacity="0.4"/>
+  <circle cx="486" cy="708" r="18" fill="#ffffff" opacity="0.4"/>
+
+  <!-- nose band / antenna -->
+  <rect x="492" y="118" width="40" height="46" rx="14" fill="#8899bb"/>
+  <circle cx="512" cy="112" r="16" fill="#ff5f57"/>
+
+  <!-- nozzle + exhaust -->
+  <path d="M460 762 L564 762 L588 824 L436 824 Z" fill="#8899bb"/>
+  <path d="M512 818 C606 876 634 934 512 986 C390 934 418 876 512 818 Z" fill="url(#flame)"/>
+  <path d="M512 862 C566 902 582 942 512 962 C442 942 458 902 512 862 Z" fill="#fff7cc" opacity="0.85"/>
+</svg>
