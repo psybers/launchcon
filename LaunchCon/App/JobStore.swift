@@ -234,7 +234,7 @@ final class JobStore {
 
         loaded.sort { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
 
-        await MainActor.run {
+        await MainActor.run {[loaded, firstError] in
             self.jobs = loaded
             self.isLoading = false
             self.loadError = firstError
