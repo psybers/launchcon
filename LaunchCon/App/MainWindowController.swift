@@ -15,7 +15,7 @@ final class MainWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "LaunchController"
+        window.title = "LaunchCon"
 
         let sidebar = DomainSidebarController(store: store)
         let list = JobListController(store: store)

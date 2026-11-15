@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidance for AI agents (and humans) working on LaunchController (LaunchCon).
+Guidance for AI agents (and humans) working on LaunchCon.
 
 ## What this is
 
@@ -12,7 +12,7 @@ for the phased roadmap — work is done milestone-by-milestone.
 ## Naming
 
 - Internal/target/bundle: **LaunchCon** (`com.psybers.LaunchCon`)
-- User-facing display name: **LaunchController**
+- User-facing display name: **LaunchCon**
 - Source dir `LaunchCon/`, tests `LaunchConTests/`
 
 ## Build & test

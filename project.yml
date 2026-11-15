@@ -13,7 +13,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.psybers.LaunchCon
         PRODUCT_NAME: LaunchCon
-        INFOPLIST_KEY_CFBundleDisplayName: LaunchController
+        INFOPLIST_KEY_CFBundleDisplayName: LaunchCon
         INFOPLIST_KEY_NSPrincipalClass: NSApplication
         GENERATE_INFOPLIST_FILE: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

@@ -22,11 +22,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mainMenu.addItem(appMenuItem)
         let appMenu = NSMenu()
         appMenuItem.submenu = appMenu
-        appMenu.addItem(withTitle: "About LaunchController",
+        appMenu.addItem(withTitle: "About LaunchCon",
                         action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
                         keyEquivalent: "")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Quit LaunchController",
+        appMenu.addItem(withTitle: "Quit LaunchCon",
                         action: #selector(NSApplication.terminate(_:)),
                         keyEquivalent: "q")
 
