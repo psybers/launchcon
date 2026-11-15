@@ -21,6 +21,17 @@ enum JobValidator {
         "Second", "Minute", "Hour", "Day", "Month", "Weekday",
     ]
 
+    /// Keys launchd has deprecated; still accepted in plists but ignored or
+    /// superseded on modern macOS.
+    private static let deprecatedKeys: Set<String> = [
+        "Umask",
+        "SoftResourceLimits",
+        "HardResourceLimits",
+        "ResourceLimits",
+        "TimeOut",
+        "ExitTimeOut",
+    ]
+
     static func validate(_ job: Job) -> [Diagnostic] {
         var results: [Diagnostic] = []
 
@@ -137,7 +148,61 @@ enum JobValidator {
                 results.append(Diagnostic(
                     severity: .warning,
                     message: "\(key) parent directory does not exist: \(directory)", key: key))
+            } else if !FileManager.default.isWritableFile(atPath: directory) {
+                results.append(Diagnostic(
+                    severity: .warning,
+                    message: "\(key) parent directory is not writable: \(directory)", key: key))
             }
+            if FileManager.default.fileExists(atPath: logPath),
+               !FileManager.default.isWritableFile(atPath: logPath) {
+                results.append(Diagnostic(
+                    severity: .warning,
+                    message: "\(key) file is not writable: \(logPath)", key: key))
+            }
+        }
+
+        // MARK: EnvironmentVariables
+
+        if let env = plist["EnvironmentVariables"] {
+            if let dict = env as? [String: Any] {
+                for (name, value) in dict {
+                    if name.isEmpty {
+                        results.append(Diagnostic(
+                            severity: .warning,
+                            message: "EnvironmentVariables has an empty variable name",
+                            key: "EnvironmentVariables"))
+                    } else if !(value is String) {
+                        results.append(Diagnostic(
+                            severity: .warning,
+                            message: "EnvironmentVariables.\(name) is not a string",
+                            key: "EnvironmentVariables"))
+                    }
+                }
+            } else {
+                results.append(Diagnostic(
+                    severity: .warning,
+                    message: "EnvironmentVariables is not a dictionary",
+                    key: "EnvironmentVariables"))
+            }
+        }
+
+        // MARK: KeepAlive + RunAtLoad
+
+        if keepAliveIsEnabled(plist["KeepAlive"]),
+           boolValue(plist["RunAtLoad"]) {
+            results.append(Diagnostic(
+                severity: .info,
+                message: "KeepAlive is set together with RunAtLoad — KeepAlive already keeps the job running",
+                key: "KeepAlive"))
+        }
+
+        // MARK: Deprecated keys
+
+        for key in plist.keys where deprecatedKeys.contains(key) {
+            results.append(Diagnostic(
+                severity: .info,
+                message: "\(key) is deprecated and may be ignored on modern macOS",
+                key: key))
         }
 
         // MARK: StartCalendarInterval
@@ -147,6 +212,27 @@ enum JobValidator {
         }
 
         return results
+    }
+
+    /// Bool interpretation that distinguishes CFBoolean from integers —
+    /// `as? Bool` would treat `KeepAlive = 1` as true.
+    private static func boolValue(_ value: Any?) -> Bool {
+        guard let number = value as? NSNumber else { return false }
+        if CFGetTypeID(number) == CFBooleanGetTypeID() { return number.boolValue }
+        return false
+    }
+
+    /// KeepAlive "enabled" means `true`, a non-empty dictionary of conditions,
+    /// or a non-empty array of dictionaries.
+    private static func keepAliveIsEnabled(_ value: Any?) -> Bool {
+        guard let value else { return false }
+        if let dict = value as? [String: Any] { return !dict.isEmpty }
+        if let array = value as? [Any] { return !array.isEmpty }
+        if let number = value as? NSNumber {
+            if CFGetTypeID(number) == CFBooleanGetTypeID() { return number.boolValue }
+            return number.intValue != 0
+        }
+        return false
     }
 
     /// Accepts a dict or array of dicts keyed by Second/Minute/Hour/Day/Month/

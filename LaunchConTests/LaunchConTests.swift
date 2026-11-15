@@ -267,6 +267,79 @@ final class JobValidatorTests: XCTestCase {
             $0.key == "StartCalendarInterval" && $0.severity == .error
         })
     }
+
+    func testKeepAliveWithRunAtLoad() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.test",
+            "Program": "/bin/echo",
+            "KeepAlive": true,
+            "RunAtLoad": true,
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.key == "KeepAlive" && $0.message.contains("RunAtLoad")
+        })
+    }
+
+    func testKeepAliveDictAloneDoesNotFlagRunAtLoad() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.test",
+            "Program": "/bin/echo",
+            "KeepAlive": ["SuccessfulExit": false],
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertFalse(diagnostics.contains {
+            $0.key == "KeepAlive" && $0.message.contains("RunAtLoad")
+        })
+    }
+
+    func testEnvironmentVariablesNotDictionary() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.test",
+            "Program": "/bin/echo",
+            "EnvironmentVariables": "PATH=/usr/bin",
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.key == "EnvironmentVariables" && $0.severity == .warning
+        })
+    }
+
+    func testEnvironmentVariablesNonStringValue() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.test",
+            "Program": "/bin/echo",
+            "EnvironmentVariables": ["GOOD": "1", "BAD": 42],
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.key == "EnvironmentVariables" && $0.message.contains("BAD")
+        })
+    }
+
+    func testDeprecatedKeyFlagged() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.test",
+            "Program": "/bin/echo",
+            "Umask": 18,
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.key == "Umask" && $0.message.contains("deprecated")
+        })
+    }
+
+    func testLogPathInMissingDirectory() throws {
+        let job = try makeJob(plist: [
+            "Label": "com.example.test",
+            "Program": "/bin/echo",
+            "StandardOutPath": "/nonexistent-dir-\(UUID().uuidString)/out.log",
+        ])
+        let diagnostics = JobValidator.validate(job)
+        XCTAssertTrue(diagnostics.contains {
+            $0.key == "StandardOutPath" && $0.message.contains("does not exist")
+        })
+    }
 }
 
 final class LogTailTests: XCTestCase {

@@ -129,6 +129,38 @@ final class JobEditorViewController: NSViewController {
         scrollView.reflectScrolledClipView(scrollView.contentView)
     }
 
+    /// Scrolls the row for `key` into view and flashes it briefly. Used when
+    /// jumping here from a diagnostic in the detail pane.
+    func highlight(key: String) {
+        guard let index = JobKeySchema.all.firstIndex(where: { $0.key == key }),
+              index < formStack.arrangedSubviews.count else { return }
+        let row = formStack.arrangedSubviews[index]
+        view.layoutSubtreeIfNeeded()
+
+        // Document is flipped: y grows downward from the top.
+        let rowRect = row.convert(row.bounds, to: scrollView.documentView)
+        let target = CGPoint(x: 0, y: max(0, rowRect.minY - 60))
+        scrollView.contentView.scroll(to: target)
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+
+        flash(row)
+        if let textView = textViews[key] {
+            view.window?.makeFirstResponder(textView)
+        }
+    }
+
+    private func flash(_ view: NSView) {
+        view.wantsLayer = true
+        guard let layer = view.layer else { return }
+        layer.cornerRadius = 6
+        let tint = NSColor.systemYellow.withAlphaComponent(0.4).cgColor
+        let anim = CABasicAnimation(keyPath: "backgroundColor")
+        anim.fromValue = tint
+        anim.toValue = NSColor.clear.cgColor
+        anim.duration = 1.2
+        layer.add(anim, forKey: "diagnosticFlash")
+    }
+
     // MARK: - Row construction
 
     private func effectiveKind(for schema: JobKeySchema) -> PlistEditorKind {

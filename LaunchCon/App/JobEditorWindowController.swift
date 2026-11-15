@@ -8,6 +8,8 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
     private var isCanceling = false
     var onClose: (() -> Void)?
 
+    var plistDocument: PlistDocument { editor.document }
+
     init(document: PlistDocument, jobLabel: String, onSaved: @escaping () -> Void) {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 620, height: 680),
@@ -53,6 +55,12 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
 
     func saveDocument() {
         editor.save()
+    }
+
+    /// Scrolls to and flashes the editor row for `key`.
+    func highlight(key: String) {
+        editor.view.layoutSubtreeIfNeeded()
+        editor.highlight(key: key)
     }
 
     /// Closes the window, prompting to save first if there are unsaved changes.

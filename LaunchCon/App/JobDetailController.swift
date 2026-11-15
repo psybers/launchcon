@@ -52,6 +52,8 @@ final class JobDetailController: NSViewController {
 
     private var currentJob: Job?
     var onEdit: ((Job) -> Void)?
+    /// Called when a diagnostic row with a plist key is clicked.
+    var onDiagnostic: ((Job, String) -> Void)?
 
     /// Approximate width that fits the info row titles plus a typical value.
     static var fitWidth: CGFloat {
@@ -172,6 +174,9 @@ final class JobDetailController: NSViewController {
         diagnosticsContainer.spacing = 6
         diagnosticsContainer.isHidden = true
         infoStack.insertArrangedSubview(diagnosticsContainer, at: 0)
+        // Fill the info stack's width so messages wrap across the pane.
+        diagnosticsContainer.widthAnchor.constraint(
+            equalTo: infoStack.widthAnchor, constant: -12).isActive = true
 
         editButton.bezelStyle = .rounded
         editButton.target = self
@@ -209,10 +214,6 @@ final class JobDetailController: NSViewController {
         header.textColor = .secondaryLabelColor
         diagnosticsContainer.addArrangedSubview(header)
 
-        // Fill the info stack's width so messages wrap across the pane.
-        diagnosticsContainer.widthAnchor.constraint(
-            equalTo: infoStack.widthAnchor, constant: -12).isActive = true
-
         for diagnostic in diagnostics {
             let (symbol, color): (String, NSColor) = {
                 switch diagnostic.severity {
@@ -238,13 +239,27 @@ final class JobDetailController: NSViewController {
             row.orientation = .horizontal
             row.spacing = 6
             row.alignment = .top
-            row.widthAnchor.constraint(
-                equalTo: diagnosticsContainer.widthAnchor).isActive = true
-            label.widthAnchor.constraint(
-                equalTo: row.widthAnchor, constant: -20).isActive = true
+
+            // Rows tied to a plist key jump to that key in the editor.
+            if let key = diagnostic.key, job.plistPath != nil {
+                row.identifier = NSUserInterfaceItemIdentifier(key)
+                row.toolTip = "Show \(key) in editor"
+                let click = NSClickGestureRecognizer(
+                    target: self, action: #selector(diagnosticClicked(_:)))
+                row.addGestureRecognizer(click)
+            }
+
             diagnosticsContainer.addArrangedSubview(row)
         }
         diagnosticsContainer.isHidden = false
+    }
+
+    @objc private func diagnosticClicked(_ gesture: NSClickGestureRecognizer) {
+        guard let row = gesture.view,
+              let key = row.identifier?.rawValue,
+              let job = currentJob,
+              job.plistPath != nil else { return }
+        onDiagnostic?(job, key)
     }
 
     // MARK: - State tab
@@ -559,3 +574,4 @@ final class JobDetailController: NSViewController {
         return "Not loaded"
     }
 }
+

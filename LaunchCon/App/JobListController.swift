@@ -151,6 +151,9 @@ final class JobListController: NSViewController {
         tableView.reloadData()
         emptyLabel.isHidden = !store.visibleJobs.isEmpty || store.isLoading
         emptyLabel.stringValue = store.isLoading ? "Loading…" : (store.loadError ?? "No jobs")
+        // reloadData preserves the selection silently — re-emit it so the
+        // detail pane refreshes with the new job objects (plist, status).
+        onSelectionChange?(selectedJob())
     }
 
     // MARK: - Job actions

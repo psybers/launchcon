@@ -168,6 +168,9 @@ final class MainWindowController: NSWindowController {
         detailVC.onEdit = { [weak self] job in
             self?.openEditor(for: job)
         }
+        detailVC.onDiagnostic = { [weak self] job, key in
+            self?.openEditor(for: job, highlightKey: key)
+        }
         list.onDoubleClick = { [weak self] job in
             self?.openEditor(for: job)
         }
@@ -288,7 +291,7 @@ final class MainWindowController: NSWindowController {
 
     // MARK: - Plist editor
 
-    func openEditor(for job: Job) {
+    func openEditor(for job: Job, highlightKey: String? = nil) {
         guard let plistPath = job.plistPath else { return }
         let url = URL(fileURLWithPath: plistPath)
         guard let dict = job.plist ?? Plist.load(url) else {
@@ -296,6 +299,20 @@ final class MainWindowController: NSWindowController {
             return
         }
         let document = PlistDocument(url: url, contents: dict)
+
+        // Reuse an already-open editor for this plist (e.g. diagnostic jumps).
+        if let existing = editorWindowControllers.first(where: {
+            $0.plistDocument.url == url
+        }) {
+            existing.showWindow(nil)
+            existing.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            if let highlightKey {
+                existing.highlight(key: highlightKey)
+            }
+            return
+        }
+
         let editor = JobEditorWindowController(document: document, jobLabel: job.label) { [weak self] in
             self?.editorDidSave(document: document, job: job)
         }
@@ -305,6 +322,9 @@ final class MainWindowController: NSWindowController {
         editorWindowControllers.append(editor)
         activeEditor = editor
         editor.showWindow(nil)
+        if let highlightKey {
+            editor.highlight(key: highlightKey)
+        }
     }
 
     private func editorDidSave(document: PlistDocument, job: Job) {
