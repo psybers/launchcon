@@ -44,6 +44,35 @@ domain queries fail from SSH/agent shells.
 - `JobStore` merges `launchctl` results with plists discovered on disk;
   groups map to `LaunchdDomain`s. All launchctl work is async off-main.
 
+## Service types (sidebar groups)
+
+`JobStore.defaultGroups()` defines the sidebar, matching LaunchControl's
+taxonomy (plus "All" on top, which unions every directory):
+
+| Group             | Directory                                                        | Domain queried        |
+|-------------------|------------------------------------------------------------------|-----------------------|
+| All               | all plist dirs below                                             | `gui/<uid>`           |
+| User Agents       | `~/Library/LaunchAgents`                                         | `gui/<uid>`           |
+| Global Agents     | `/Library/LaunchAgents`                                          | `gui/<uid>`           |
+| Global Daemons    | `/Library/LaunchDaemons`                                         | none (system, needs root) |
+| System Agents     | `/System/Library/LaunchAgents`                                   | `gui/<uid>`           |
+| System Daemons    | `/System/Library/LaunchDaemons`                                  | none (system)         |
+| Server Daemons    | `/Applications/Server.app/Contents/ServerRoot/System/Library/LaunchDaemons` | none (system) |
+| Homebrew          | `$(brew --prefix)/Homebrew/Library/{LaunchAgents,LaunchDaemons}` (`/opt/homebrew`, `/usr/local`) | none |
+
+Notes:
+
+- Agent groups query the live `gui/<uid>` domain; `JobStore` intersects
+  results with the group's discovered plist labels, so Apple's ~460 session
+  services don't swamp the list. System/daemon groups are plist-discovery
+  only — `launchctl print system` requires root.
+- `LaunchdDomain.bootstrapDomain(forPlistAt:)` derives the load domain from
+  the plist path (`*LaunchDaemons` → `system`, else `gui/<uid>`), which is
+  what makes mixed groups like "All" work.
+- Homebrew formula services that aren't materialized as plists (visible via
+  `brew services list`) are not yet surfaced — that needs `brew services`
+  integration.
+
 ## Hard-won gotchas
 
 - **`launchctl list <domain>` doesn't exist on modern macOS.** Use
