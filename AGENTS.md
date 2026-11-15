@@ -106,6 +106,10 @@ This is independent of the service-type group selection.
   frames**, and each `setPosition` re-lays out the *other* dividers from
   their stored positions — set the rightmost divider first, then the left
   (see `applyInitialSplitPositions`).
+- **`usesAutomaticRowHeights` breaks cell width:** it makes `NSTableView`
+  size view-based cells by their *fitting* width, so long text overflows
+  into neighboring columns. `JobListController` uses a fixed `rowHeight`
+  instead — all rows are single-line.
 - **Window sizing:** assign `contentViewController` *before*
   `setContentSize`/`center`, and set `translatesAutoresizingMaskIntoConstraints
   = false` on scroll views or the window collapses to a strip.

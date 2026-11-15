@@ -59,7 +59,9 @@ final class JobListController: NSViewController {
         tableView.menu = buildJobMenu()
         tableView.target = self
         tableView.doubleAction = #selector(rowDoubleClicked)
-        tableView.usesAutomaticRowHeights = true
+        // Not usesAutomaticRowHeights: that makes the table size cells by
+        // their fitting width, so long labels overflow into the next columns.
+        tableView.rowHeight = 22
         tableView.rowSizeStyle = .default
 
         scrollView.documentView = tableView
