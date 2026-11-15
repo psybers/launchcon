@@ -385,9 +385,9 @@ final class JobDetailController: NSViewController {
         scrollView.borderType = .noBorder
     }
 
-    /// Wraps `content` in a flipped container so it top-aligns inside the
-    /// scroll view instead of sitting at the bottom when shorter than the
-    /// visible area. The container is at least as tall as the clip view.
+    /// Wraps `content` in a container that is exactly as tall as the content
+    /// but at least as tall as the scroll view's clip area. Short content
+    /// therefore sits at the top of the pane instead of the bottom.
     private func embedInScroll(_ scrollView: NSScrollView, content: NSView) {
         let container = DocumentContainerView()
         container.translatesAutoresizingMaskIntoConstraints = false
@@ -398,8 +398,8 @@ final class JobDetailController: NSViewController {
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
 
-        let bottom = content.bottomAnchor.constraint(equalTo: container.bottomAnchor)
-        bottom.priority = .defaultHigh
+        // Container tracks content height, but never shrinks below the clip
+        // height (required beats the lower-priority height match).
         let heightMatch = container.heightAnchor.constraint(equalTo: content.heightAnchor)
         heightMatch.priority = .defaultHigh
 
@@ -407,7 +407,6 @@ final class JobDetailController: NSViewController {
             content.topAnchor.constraint(equalTo: container.topAnchor),
             content.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             content.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            bottom,
             heightMatch,
             container.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.heightAnchor),
             container.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
