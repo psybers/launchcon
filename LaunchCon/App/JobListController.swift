@@ -135,7 +135,8 @@ final class JobListController: NSViewController {
     }
 
     @objc private func rowDoubleClicked() {
-        guard let job = selectedJob() else { return }
+        // doubleAction also fires for header clicks; clickedRow is -1 then.
+        guard tableView.clickedRow >= 0, let job = selectedJob() else { return }
         onDoubleClick?(job)
     }
 
