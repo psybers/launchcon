@@ -101,8 +101,50 @@ final class JobListController: NSViewController {
         store.onChange = { [weak self] in
             self?.refresh()
         }
+        restoreTableState()
         store.reload()
         refresh()
+        // Column widths only change via drags (no notification), so save on quit.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(saveTableState),
+            name: NSApplication.willTerminateNotification,
+            object: nil
+        )
+    }
+
+    /// Column widths and sort order persisted under UserDefaults.
+    private enum TableDefaultsKey {
+        static let columnWidths = "JobList.columnWidths"
+        static let sortDescriptors = "JobList.sortDescriptors"
+    }
+
+    private func restoreTableState() {
+        if let widths = UserDefaults.standard.dictionary(forKey: TableDefaultsKey.columnWidths) as? [String: Double] {
+            for column in tableView.tableColumns {
+                if let width = widths[column.identifier.rawValue] {
+                    column.width = width
+                }
+            }
+        }
+        if let saved = UserDefaults.standard.array(forKey: TableDefaultsKey.sortDescriptors) as? [[String: Any]] {
+            tableView.sortDescriptors = saved.compactMap { entry in
+                guard let key = entry["key"] as? String else { return nil }
+                return NSSortDescriptor(key: key, ascending: entry["ascending"] as? Bool ?? true)
+            }
+        }
+    }
+
+    @objc private func saveTableState() {
+        var widths: [String: Double] = [:]
+        for column in tableView.tableColumns {
+            widths[column.identifier.rawValue] = column.width
+        }
+        UserDefaults.standard.set(widths, forKey: TableDefaultsKey.columnWidths)
+        UserDefaults.standard.set(
+            tableView.sortDescriptors.map { ["key": $0.key ?? "", "ascending": $0.ascending] },
+            forKey: TableDefaultsKey.sortDescriptors
+        )
     }
 
     func refresh() {
@@ -250,5 +292,6 @@ extension JobListController: NSTableViewDelegate {
 
     func tableView(_ tableView: NSTableView, sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]) {
         store.sortDescriptors = tableView.sortDescriptors
+        saveTableState()
     }
 }

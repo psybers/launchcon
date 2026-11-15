@@ -10,9 +10,14 @@ private final class PanePreservingSplitView: NSSplitView {
     /// Trailing pane width preserved across resizes; refreshed whenever the
     /// dividers move without a bounds change (i.e. user drags).
     var trailingWidth: CGFloat = JobDetailController.fitWidth
+    /// Split view size as of the previous resizeSubviews pass. Comparing
+    /// against this (rather than the oldSize parameter) reliably distinguishes
+    /// window resizes from divider drags, which don't change the bounds.
+    private var lastBoundsSize: NSSize = .zero
 
     override func resizeSubviews(withOldSize oldSize: NSSize) {
-        let boundsChanged = bounds.width != oldSize.width || bounds.height != oldSize.height
+        let boundsChanged = bounds.size != lastBoundsSize
+        lastBoundsSize = bounds.size
         super.resizeSubviews(withOldSize: oldSize)
         guard subviews.count >= 3 else { return }
         if boundsChanged {
@@ -34,7 +39,7 @@ final class MainWindowController: NSWindowController {
     private let store = JobStore()
     private var jobList: JobListController!
     private var detail: JobDetailController!
-    private var splitView: NSSplitView!
+    private var splitView: PanePreservingSplitView!
     private var paneContainer: NSViewController?
     private var editorWindowControllers: [JobEditorWindowController] = []
     private var activeEditor: JobEditorWindowController?
@@ -65,6 +70,9 @@ final class MainWindowController: NSWindowController {
         splitView.isVertical = true
         splitView.dividerStyle = .thin
         splitView.lockedLeadingWidth = Self.sidebarMinWidth
+        if let savedWidth = UserDefaults.standard.object(forKey: Self.detailWidthDefaultsKey) as? CGFloat {
+            splitView.trailingWidth = savedWidth
+        }
         self.splitView = splitView
 
         let container = NSViewController()
@@ -114,15 +122,43 @@ final class MainWindowController: NSWindowController {
             width: Self.sidebarMinWidth + Self.listMinWidth + JobDetailController.fitWidth,
             height: 420
         )
-        // Enforce our desired content size explicitly.
-        window.setContentSize(NSSize(width: 1100, height: 640))
-        window.center()
+        // Restore the saved frame if there is one; otherwise use the default
+        // content size centered on screen. Persisted manually under
+        // frameDefaultsKey — frameAutosaveName proved unreliable (it never
+        // saved moves and re-applied a stale centered frame on launch).
+        var frameRestored = false
+        if let saved = UserDefaults.standard.string(forKey: Self.frameDefaultsKey) {
+            let rect = NSRectFromString(saved)
+            if rect != .zero {
+                window.setFrame(rect, display: false)
+                frameRestored = true
+            }
+        }
+        if !frameRestored {
+            window.setContentSize(NSSize(width: 1100, height: 640))
+            window.center()
+        }
         super.init(window: window)
         splitView.delegate = self
+        // Track the detail pane's width whenever its frame changes (divider
+        // drags) so it survives both window resizes and app relaunches.
+        detailVC.view.postsFrameChangedNotifications = true
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(detailFrameChanged(_:)),
+            name: NSView.frameDidChangeNotification,
+            object: detailVC.view
+        )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(windowResized(_:)),
             name: NSWindow.didResizeNotification,
+            object: window
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowFrameChanged(_:)),
+            name: NSWindow.didMoveNotification,
             object: window
         )
 
@@ -145,17 +181,37 @@ final class MainWindowController: NSWindowController {
     /// Minimum pane widths used for divider drag constraints and the window's
     /// minimum size.
     private static let listMinWidth: CGFloat = 240
+    private static let detailWidthDefaultsKey = "MainWindow.detailWidth"
+    private static let frameDefaultsKey = "MainWindow.frame"
     private static var sidebarMinWidth: CGFloat {
         DomainSidebarController.fitWidth(for: JobStore.defaultGroups())
     }
 
     private var didApplyInitialSplitPositions = false
 
+    /// Persists the detail pane's width and keeps the split view's
+    /// `trailingWidth` in sync so window resizes preserve the dragged width.
+    @objc private func detailFrameChanged(_ notification: Notification) {
+        guard let view = notification.object as? NSView, view.frame.width > 0 else { return }
+        splitView.trailingWidth = view.frame.width
+        UserDefaults.standard.set(view.frame.width, forKey: Self.detailWidthDefaultsKey)
+    }
+
+    private func saveWindowFrame() {
+        guard let frame = window?.frame else { return }
+        UserDefaults.standard.set(NSStringFromRect(frame), forKey: Self.frameDefaultsKey)
+    }
+
+    @objc private func windowFrameChanged(_ notification: Notification) {
+        saveWindowFrame()
+    }
+
     // windowDidLoad never fires for this programmatically created window, so
     // initial pane positions are applied once the window is on screen —
     // triggered by `applyInitialSplitPositionsIfNeeded` from AppDelegate and
     // by the didResize observer below.
     @objc private func windowResized(_ notification: Notification) {
+        saveWindowFrame()
         applyInitialSplitPositionsIfNeeded()
     }
 
@@ -167,10 +223,17 @@ final class MainWindowController: NSWindowController {
     }
 
     /// Safety net: if the window still ends up zoomed (which hides the
-    /// resize handles), restore the desired frame — only an explicit
-    /// setFrame reliably clears the zoom state.
+    /// resize handles), restore the saved frame — only an explicit setFrame
+    /// reliably clears the zoom state.
     private func unzoomWindowIfNeeded() {
         guard let w = window, w.isZoomed else { return }
+        if let saved = UserDefaults.standard.string(forKey: Self.frameDefaultsKey) {
+            let rect = NSRectFromString(saved)
+            if rect != .zero {
+                w.setFrame(rect, display: true)
+                return
+            }
+        }
         let content = NSRect(x: 0, y: 0, width: 1100, height: 640)
         var frame = NSWindow.frameRect(forContentRect: content, styleMask: w.styleMask)
         if let visible = w.screen?.visibleFrame {
@@ -188,7 +251,8 @@ final class MainWindowController: NSWindowController {
         guard width > 0, splitView.subviews.count >= 3 else { return }
         // Set the right divider first: each setPosition re-lays out the other
         // dividers from their stored positions, so the left one must be last.
-        splitView.setPosition(width - JobDetailController.fitWidth, ofDividerAt: 1)
+        // trailingWidth holds the persisted detail-pane width (or fit width).
+        splitView.setPosition(width - splitView.trailingWidth, ofDividerAt: 1)
         splitView.setPosition(Self.sidebarMinWidth, ofDividerAt: 0)
     }
 

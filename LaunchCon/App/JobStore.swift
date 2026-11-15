@@ -97,8 +97,19 @@ final class JobStore {
     /// Description of the last load failure, if any.
     private(set) var loadError: String?
 
+    /// UserDefaults keys for UI state persisted across runs.
+    private enum DefaultsKey {
+        static let disabledFilters = "JobStore.disabledFilters"
+        static let selectedGroup = "JobStore.selectedGroup"
+    }
+
     var selectedGroup: DomainGroup? {
-        didSet { reload() }
+        didSet {
+            if let id = selectedGroup?.id {
+                UserDefaults.standard.set(id, forKey: DefaultsKey.selectedGroup)
+            }
+            reload()
+        }
     }
 
     /// Sidebar state filters; unchecked filters hide matching jobs.
@@ -135,7 +146,13 @@ final class JobStore {
     /// Filters unchecked in the sidebar. A job is hidden when it matches any
     /// filter in this set.
     var disabledFilters: Set<JobFilter> = [] {
-        didSet { notifyChange() }
+        didSet {
+            UserDefaults.standard.set(
+                disabledFilters.map(\.rawValue).sorted(),
+                forKey: DefaultsKey.disabledFilters
+            )
+            notifyChange()
+        }
     }
 
     /// Active column sort from the job table; applied on top of `jobs` and
@@ -150,7 +167,12 @@ final class JobStore {
 
     init(groups: [DomainGroup] = JobStore.defaultGroups()) {
         self.groups = groups
-        self.selectedGroup = groups.first
+        let savedGroupID = UserDefaults.standard.string(forKey: DefaultsKey.selectedGroup)
+        self.selectedGroup = groups.first { $0.id == savedGroupID } ?? groups.first
+        self.disabledFilters = Set(
+            (UserDefaults.standard.stringArray(forKey: DefaultsKey.disabledFilters) ?? [])
+                .compactMap { JobFilter(rawValue: $0) }
+        )
     }
 
     var visibleJobs: [Job] {

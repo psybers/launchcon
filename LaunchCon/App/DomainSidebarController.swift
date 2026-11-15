@@ -8,6 +8,7 @@ final class DomainSidebarController: NSViewController {
     private let scrollView = NSScrollView()
     private let searchField = NSSearchField()
     private let refreshButton = NSButton(title: "Refresh", target: nil, action: nil)
+    private var filterCheckboxes: [NSButton] = []
 
     /// Width that fits the longest domain title plus cell padding and scroller.
     static func fitWidth(for groups: [JobStore.DomainGroup]) -> CGFloat {
@@ -72,6 +73,7 @@ final class DomainSidebarController: NSViewController {
             button.controlSize = .small
             filterButtons.append(button)
         }
+        filterCheckboxes = filterButtons
         let filtersStack = NSStackView(views: filterButtons)
         filtersStack.orientation = .vertical
         filtersStack.alignment = .leading
@@ -98,6 +100,11 @@ final class DomainSidebarController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.reloadData()
+        // Reflect the store's persisted disabled filters in the checkboxes.
+        for (index, button) in filterCheckboxes.enumerated() {
+            let filter = JobStore.JobFilter.allCases[index]
+            button.state = store.disabledFilters.contains(filter) ? .off : .on
+        }
         selectRow(for: store.selectedGroup)
     }
 
