@@ -215,11 +215,13 @@ extension JobListController: NSTableViewDelegate {
             break
         }
 
-        // Color-code: green = running, red = disabled, secondary = otherwise.
+        // Color-code: green = running, red = disabled, orange = not loaded.
         if job.pid != nil {
             textField?.textColor = .systemGreen
         } else if job.isDisabled {
             textField?.textColor = .systemRed
+        } else if !job.isLoaded {
+            textField?.textColor = .systemOrange
         } else {
             textField?.textColor = .labelColor
         }
