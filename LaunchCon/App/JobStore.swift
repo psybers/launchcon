@@ -138,6 +138,12 @@ final class JobStore {
         didSet { notifyChange() }
     }
 
+    /// Active column sort from the job table; applied on top of `jobs` and
+    /// the text/state filters in `visibleJobs`.
+    var sortDescriptors: [NSSortDescriptor] = [] {
+        didSet { notifyChange() }
+    }
+
     /// Called on the main thread whenever `jobs`, `isLoading`, or the filter
     /// changes. Views should reload their data in response.
     var onChange: (() -> Void)?
@@ -155,8 +161,55 @@ final class JobStore {
             }
         }
         let filter = filterText.trimmingCharacters(in: .whitespaces)
-        guard !filter.isEmpty else { return result }
-        return result.filter { $0.label.localizedCaseInsensitiveContains(filter) }
+        if !filter.isEmpty {
+            result = result.filter { $0.label.localizedCaseInsensitiveContains(filter) }
+        }
+        if !sortDescriptors.isEmpty {
+            result.sort { Self.comesBefore($0, $1, descriptors: sortDescriptors) }
+        }
+        return result
+    }
+
+    /// Orders `a` before `b` per the sort descriptors; ties fall back to label.
+    private static func comesBefore(_ a: Job, _ b: Job, descriptors: [NSSortDescriptor]) -> Bool {
+        for descriptor in descriptors {
+            let ordering = compare(a, b, key: descriptor.key ?? "", ascending: descriptor.ascending)
+            if ordering != .orderedSame { return ordering == .orderedAscending }
+        }
+        return a.label.localizedCaseInsensitiveCompare(b.label) == .orderedAscending
+    }
+
+    private static func compare(_ a: Job, _ b: Job, key: String, ascending: Bool) -> ComparisonResult {
+        let ordering: ComparisonResult
+        switch key {
+        case "label":
+            ordering = a.label.localizedCaseInsensitiveCompare(b.label)
+        case "pid":
+            ordering = compareOptional(a.pid, b.pid)
+        case "status":
+            ordering = a.statusText.localizedCaseInsensitiveCompare(b.statusText)
+        case "domain":
+            ordering = a.domain.rawValue.localizedCaseInsensitiveCompare(b.domain.rawValue)
+        case "path":
+            ordering = (a.plistPath ?? "").localizedCaseInsensitiveCompare(b.plistPath ?? "")
+        default:
+            ordering = .orderedSame
+        }
+        switch ordering {
+        case .orderedSame: return .orderedSame
+        case .orderedAscending: return ascending ? .orderedAscending : .orderedDescending
+        case .orderedDescending: return ascending ? .orderedDescending : .orderedAscending
+        }
+    }
+
+    /// nils sort last when ascending.
+    private static func compareOptional(_ a: Int?, _ b: Int?) -> ComparisonResult {
+        switch (a, b) {
+        case let (x?, y?): return x < y ? .orderedAscending : x > y ? .orderedDescending : .orderedSame
+        case (_?, nil): return .orderedAscending
+        case (nil, _?): return .orderedDescending
+        case (nil, nil): return .orderedSame
+        }
     }
 
     func reload() {

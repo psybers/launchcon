@@ -31,6 +31,14 @@ struct Job: Identifiable, Hashable {
 
     var displayName: String { label }
 
+    /// Human-readable status shown in the job list's Status column.
+    var statusText: String {
+        if pid != nil { return "Running" }
+        if isDisabled { return "Disabled" }
+        if isLoaded { return lastExitStatus.map { "Exit \($0)" } ?? "Loaded" }
+        return "Not loaded"
+    }
+
     static func == (lhs: Job, rhs: Job) -> Bool {
         lhs.id == rhs.id
     }

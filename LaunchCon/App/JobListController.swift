@@ -51,6 +51,7 @@ final class JobListController: NSViewController {
             column.width = width
             column.minWidth = 40
             column.maxWidth = .greatestFiniteMagnitude
+            column.sortDescriptorPrototype = NSSortDescriptor(key: id, ascending: true)
             tableView.addTableColumn(column)
         }
 
@@ -209,7 +210,7 @@ extension JobListController: NSTableViewDelegate {
         case "pid":
             textField?.stringValue = job.pid.map(String.init) ?? "—"
         case "status":
-            textField?.stringValue = statusText(for: job)
+            textField?.stringValue = job.statusText
         case "domain":
             textField?.stringValue = job.domain.rawValue
         case "path":
@@ -235,10 +236,7 @@ extension JobListController: NSTableViewDelegate {
         onSelectionChange?(selectedJob())
     }
 
-    private func statusText(for job: Job) -> String {
-        if job.pid != nil { return "Running" }
-        if job.isDisabled { return "Disabled" }
-        if job.isLoaded { return job.lastExitStatus.map { "Exit \($0)" } ?? "Loaded" }
-        return "Not loaded"
+    func tableView(_ tableView: NSTableView, sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]) {
+        store.sortDescriptors = tableView.sortDescriptors
     }
 }
