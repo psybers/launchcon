@@ -44,7 +44,6 @@ final class JobListController: NSViewController {
             ("pid", "PID", 70.0),
             ("status", "Status", 80.0),
             ("domain", "Domain", 160.0),
-            ("path", "Path", 300.0),
         ] {
             let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(id))
             column.title = title
@@ -204,17 +203,24 @@ extension JobListController: NSTableViewDelegate {
         }
 
         let textField = cell?.textField
+        textField?.toolTip = nil
         switch column.identifier.rawValue {
         case "label":
             textField?.stringValue = job.label
+            // Tooltip with the full label only when it doesn't fit the column.
+            if let textField {
+                let font = textField.font ?? .systemFont(ofSize: NSFont.systemFontSize)
+                let textWidth = (job.label as NSString).size(withAttributes: [.font: font]).width
+                if textWidth > column.width - 8 {
+                    textField.toolTip = job.label
+                }
+            }
         case "pid":
             textField?.stringValue = job.pid.map(String.init) ?? "—"
         case "status":
             textField?.stringValue = job.statusText
         case "domain":
             textField?.stringValue = job.domain.rawValue
-        case "path":
-            textField?.stringValue = job.plistPath ?? "—"
         default:
             break
         }
