@@ -1,5 +1,11 @@
 import AppKit
 
+/// Flipped document container so the scroll view's initial clip origin
+/// (0, 0) is the TOP of the document, not the bottom.
+private final class FlippedDocumentView: NSView {
+    override var isFlipped: Bool { true }
+}
+
 /// Schema-driven editor for a launchd plist. Each supported key gets a row
 /// with an appropriate control; unknown/complex keys are preserved on save.
 final class JobEditorViewController: NSViewController {
@@ -39,7 +45,14 @@ final class JobEditorViewController: NSViewController {
         formStack.edgeInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         formStack.translatesAutoresizingMaskIntoConstraints = false
 
-        scrollView.documentView = formStack
+        // Wrap the form in a container pinned to the top of the scroll view.
+        // The container is at least as tall as the clip view, so a short form
+        // top-aligns instead of bottom-aligning (NSScrollView default).
+        let documentContainer = FlippedDocumentView()
+        documentContainer.translatesAutoresizingMaskIntoConstraints = false
+        formStack.setContentHuggingPriority(.required, for: .vertical)
+        documentContainer.addSubview(formStack)
+        scrollView.documentView = documentContainer
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
@@ -89,8 +102,17 @@ final class JobEditorViewController: NSViewController {
             bottomBar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             bottomBar.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             bottomBar.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            formStack.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
+            formStack.topAnchor.constraint(equalTo: documentContainer.topAnchor),
+            formStack.leadingAnchor.constraint(equalTo: documentContainer.leadingAnchor),
+            formStack.trailingAnchor.constraint(equalTo: documentContainer.trailingAnchor),
+            documentContainer.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.heightAnchor),
+            documentContainer.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
         ])
+        // Container tracks the form's height but never shrinks below the clip
+        // view, so short forms top-align and tall forms scroll.
+        let heightMatch = documentContainer.heightAnchor.constraint(equalTo: formStack.heightAnchor)
+        heightMatch.priority = .defaultHigh
+        heightMatch.isActive = true
 
         view = container
     }
@@ -98,6 +120,13 @@ final class JobEditorViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         buildRows()
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        // Document is flipped, so .zero is the top-left.
+        scrollView.contentView.scroll(to: .zero)
+        scrollView.reflectScrolledClipView(scrollView.contentView)
     }
 
     // MARK: - Row construction
