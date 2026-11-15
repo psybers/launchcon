@@ -50,9 +50,15 @@ final class JobListController: NSViewController {
             column.width = width
             column.minWidth = 40
             column.maxWidth = .greatestFiniteMagnitude
+            // Only the label column absorbs width changes; the rest keep
+            // their widths but remain user-resizable.
+            column.resizingMask = id == "label"
+                ? [.autoresizingMask, .userResizingMask]
+                : [.userResizingMask]
             column.sortDescriptorPrototype = NSSortDescriptor(key: id, ascending: true)
             tableView.addTableColumn(column)
         }
+        tableView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
 
         tableView.dataSource = self
         tableView.delegate = self

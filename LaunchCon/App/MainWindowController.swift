@@ -1,11 +1,41 @@
 import AppKit
 
+/// NSSplitView that keeps the outer panes at their current widths when the
+/// split view itself is resized (window resize) — only the center pane
+/// absorbs width changes. Divider drags don't change the split view's bounds,
+/// so they are unaffected.
+private final class PanePreservingSplitView: NSSplitView {
+    /// Leading pane width preserved across resizes (0 = use current frame).
+    var lockedLeadingWidth: CGFloat = 0
+    /// Trailing pane width preserved across resizes; refreshed whenever the
+    /// dividers move without a bounds change (i.e. user drags).
+    var trailingWidth: CGFloat = JobDetailController.fitWidth
+
+    override func resizeSubviews(withOldSize oldSize: NSSize) {
+        let boundsChanged = bounds.width != oldSize.width || bounds.height != oldSize.height
+        super.resizeSubviews(withOldSize: oldSize)
+        guard subviews.count >= 3 else { return }
+        if boundsChanged {
+            let width = bounds.width
+            let leading = lockedLeadingWidth > 0 ? lockedLeadingWidth : subviews[0].frame.width
+            let trailing = trailingWidth > 0 ? trailingWidth : subviews[2].frame.width
+            // Set the right divider first: each setPosition re-lays out the
+            // other dividers from their stored positions.
+            setPosition(width - trailing, ofDividerAt: 1)
+            setPosition(leading, ofDividerAt: 0)
+        } else if let last = subviews.last {
+            trailingWidth = last.frame.width
+        }
+    }
+}
+
 final class MainWindowController: NSWindowController {
 
     private let store = JobStore()
     private var jobList: JobListController!
     private var detail: JobDetailController!
     private var splitView: NSSplitView!
+    private var paneContainer: NSViewController?
     private var editorWindowControllers: [JobEditorWindowController] = []
     private var activeEditor: JobEditorWindowController?
 
@@ -31,9 +61,10 @@ final class MainWindowController: NSWindowController {
         // A plain NSSplitView manages pane frames directly, so initial
         // divider positions and drag constraints behave predictably (unlike
         // NSSplitViewController's constraint-driven layout).
-        let splitView = NSSplitView()
+        let splitView = PanePreservingSplitView()
         splitView.isVertical = true
         splitView.dividerStyle = .thin
+        splitView.lockedLeadingWidth = Self.sidebarMinWidth
         self.splitView = splitView
 
         let container = NSViewController()
@@ -53,23 +84,37 @@ final class MainWindowController: NSWindowController {
         ]
         var x: CGFloat = 0
         for (child, width) in paneWidths {
-            child.view.translatesAutoresizingMaskIntoConstraints = false
+            // translatesAutoresizingMaskIntoConstraints stays true so the
+            // autoresizingMask below is honored by NSSplitView when the
+            // window resizes — only the list pane has a flexible width.
             child.view.frame = NSRect(x: x, y: 0, width: width, height: 640)
             child.view.autoresizingMask = child === list ? [.width, .height] : [.height]
             splitView.addSubview(child.view)
             x += width
         }
-        container.view = splitView
-        splitView.autoresizingMask = [.width, .height]
-        splitView.translatesAutoresizingMaskIntoConstraints = true
+        // The split view fills a plain container view via constraints so it
+        // tracks window resizes.
+        let wrapper = NSView()
+        wrapper.addSubview(splitView)
+        splitView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            splitView.topAnchor.constraint(equalTo: wrapper.topAnchor),
+            splitView.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor),
+            splitView.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
+            splitView.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
+        ])
+        container.view = wrapper
+        paneContainer = container
 
-        window.contentViewController = container
+        // Set contentView directly rather than contentViewController: the
+        // latter makes AppKit auto-size (and zoom) the window to the view's
+        // fitting size, leaving it unresizable.
+        window.contentView = wrapper
         window.minSize = NSSize(
             width: Self.sidebarMinWidth + Self.listMinWidth + JobDetailController.fitWidth,
             height: 420
         )
-        // Assigning a contentViewController lets AppKit resize the window to the
-        // view's fitting size; enforce our desired size afterwards.
+        // Enforce our desired content size explicitly.
         window.setContentSize(NSSize(width: 1100, height: 640))
         window.center()
         super.init(window: window)
@@ -117,7 +162,22 @@ final class MainWindowController: NSWindowController {
     func applyInitialSplitPositionsIfNeeded() {
         guard !didApplyInitialSplitPositions, splitView.bounds.width > 0 else { return }
         didApplyInitialSplitPositions = true
+        unzoomWindowIfNeeded()
         applyInitialSplitPositions()
+    }
+
+    /// Safety net: if the window still ends up zoomed (which hides the
+    /// resize handles), restore the desired frame — only an explicit
+    /// setFrame reliably clears the zoom state.
+    private func unzoomWindowIfNeeded() {
+        guard let w = window, w.isZoomed else { return }
+        let content = NSRect(x: 0, y: 0, width: 1100, height: 640)
+        var frame = NSWindow.frameRect(forContentRect: content, styleMask: w.styleMask)
+        if let visible = w.screen?.visibleFrame {
+            frame.origin.x = visible.midX - frame.width / 2
+            frame.origin.y = visible.midY - frame.height / 2
+        }
+        w.setFrame(frame, display: true)
     }
 
     /// Opens with the sidebar and detail panes at their fit widths and the job
@@ -337,7 +397,8 @@ extension MainWindowController: NSSplitViewDelegate {
         let width = splitView.bounds.width
         switch dividerIndex {
         case 0:
-            return width - Self.listMinWidth - JobDetailController.fitWidth
+            // Left pane is fixed-width: pin the divider at the fit width.
+            return Self.sidebarMinWidth
         case 1:
             return width - JobDetailController.fitWidth
         default:
