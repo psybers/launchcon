@@ -5,6 +5,7 @@ final class MainWindowController: NSWindowController {
     private let store = JobStore()
     private var jobList: JobListController!
     private var detail: JobDetailController!
+    private var splitView: NSSplitView!
     private var editorWindowControllers: [JobEditorWindowController] = []
     private var activeEditor: JobEditorWindowController?
 
@@ -27,24 +28,58 @@ final class MainWindowController: NSWindowController {
             detailVC?.show(job: job)
         }
 
-        let splitViewController = NSSplitViewController()
-        let sidebarItem = NSSplitViewItem(viewController: sidebar)
-        // Fixed content-fit widths: the job list absorbs all remaining space.
-        sidebarItem.minimumThickness = DomainSidebarController.fitWidth(for: store.groups)
-        sidebarItem.maximumThickness = sidebarItem.minimumThickness
-        let detailItem = NSSplitViewItem(viewController: detailVC)
-        detailItem.minimumThickness = JobDetailController.fitWidth
-        detailItem.maximumThickness = detailItem.minimumThickness
-        splitViewController.addSplitViewItem(sidebarItem)
-        splitViewController.addSplitViewItem(NSSplitViewItem(viewController: list))
-        splitViewController.addSplitViewItem(detailItem)
+        // A plain NSSplitView manages pane frames directly, so initial
+        // divider positions and drag constraints behave predictably (unlike
+        // NSSplitViewController's constraint-driven layout).
+        let splitView = NSSplitView()
+        splitView.isVertical = true
+        splitView.dividerStyle = .thin
+        self.splitView = splitView
 
-        window.contentViewController = splitViewController
+        let container = NSViewController()
+        container.addChild(sidebar)
+        container.addChild(list)
+        container.addChild(detailVC)
+
+        // NSSplitView takes each pane's initial size from its existing frame,
+        // so give every pane an explicit frame: sidebar and detail at their
+        // fit widths, the job list taking the remainder. Only the list gets a
+        // flexible width so it absorbs window resizes; the outer panes keep
+        // their (draggable) widths.
+        let paneWidths: [(NSViewController, CGFloat)] = [
+            (sidebar, Self.sidebarMinWidth),
+            (list, 1100 - Self.sidebarMinWidth - JobDetailController.fitWidth),
+            (detailVC, JobDetailController.fitWidth),
+        ]
+        var x: CGFloat = 0
+        for (child, width) in paneWidths {
+            child.view.translatesAutoresizingMaskIntoConstraints = false
+            child.view.frame = NSRect(x: x, y: 0, width: width, height: 640)
+            child.view.autoresizingMask = child === list ? [.width, .height] : [.height]
+            splitView.addSubview(child.view)
+            x += width
+        }
+        container.view = splitView
+        splitView.autoresizingMask = [.width, .height]
+        splitView.translatesAutoresizingMaskIntoConstraints = true
+
+        window.contentViewController = container
+        window.minSize = NSSize(
+            width: Self.sidebarMinWidth + Self.listMinWidth + JobDetailController.fitWidth,
+            height: 420
+        )
         // Assigning a contentViewController lets AppKit resize the window to the
         // view's fitting size; enforce our desired size afterwards.
         window.setContentSize(NSSize(width: 1100, height: 640))
         window.center()
         super.init(window: window)
+        splitView.delegate = self
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowResized(_:)),
+            name: NSWindow.didResizeNotification,
+            object: window
+        )
 
         list.onJobAction = { [weak self] action, job in
             self?.performJobAction(action, on: job)
@@ -60,6 +95,41 @@ final class MainWindowController: NSWindowController {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Minimum pane widths used for divider drag constraints and the window's
+    /// minimum size.
+    private static let listMinWidth: CGFloat = 240
+    private static var sidebarMinWidth: CGFloat {
+        DomainSidebarController.fitWidth(for: JobStore.defaultGroups())
+    }
+
+    private var didApplyInitialSplitPositions = false
+
+    // windowDidLoad never fires for this programmatically created window, so
+    // initial pane positions are applied once the window is on screen —
+    // triggered by `applyInitialSplitPositionsIfNeeded` from AppDelegate and
+    // by the didResize observer below.
+    @objc private func windowResized(_ notification: Notification) {
+        applyInitialSplitPositionsIfNeeded()
+    }
+
+    func applyInitialSplitPositionsIfNeeded() {
+        guard !didApplyInitialSplitPositions, splitView.bounds.width > 0 else { return }
+        didApplyInitialSplitPositions = true
+        applyInitialSplitPositions()
+    }
+
+    /// Opens with the sidebar and detail panes at their fit widths and the job
+    /// list taking the remaining space.
+    private func applyInitialSplitPositions() {
+        splitView.layoutSubtreeIfNeeded()
+        let width = splitView.bounds.width
+        guard width > 0, splitView.subviews.count >= 3 else { return }
+        // Set the right divider first: each setPosition re-lays out the other
+        // dividers from their stored positions, so the left one must be last.
+        splitView.setPosition(width - JobDetailController.fitWidth, ofDividerAt: 1)
+        splitView.setPosition(Self.sidebarMinWidth, ofDividerAt: 0)
     }
 
     // MARK: - Job actions
@@ -243,6 +313,35 @@ final class MainWindowController: NSWindowController {
             return job.isLoaded
         default:
             return true
+        }
+    }
+}
+
+extension MainWindowController: NSSplitViewDelegate {
+    /// Keeps each pane above its minimum width while dragging a divider.
+    /// Divider 0 sits between sidebar and job list; divider 1 between job
+    /// list and detail.
+    func splitView(_ splitView: NSSplitView, constrainMinCoordinate proposedMin: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
+        switch dividerIndex {
+        case 0:
+            return Self.sidebarMinWidth
+        case 1:
+            let sidebarRight = splitView.subviews.first?.frame.maxX ?? Self.sidebarMinWidth
+            return sidebarRight + Self.listMinWidth
+        default:
+            return proposedMin
+        }
+    }
+
+    func splitView(_ splitView: NSSplitView, constrainMaxCoordinate proposedMax: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
+        let width = splitView.bounds.width
+        switch dividerIndex {
+        case 0:
+            return width - Self.listMinWidth - JobDetailController.fitWidth
+        case 1:
+            return width - JobDetailController.fitWidth
+        default:
+            return proposedMax
         }
     }
 }

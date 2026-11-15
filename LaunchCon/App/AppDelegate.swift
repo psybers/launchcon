@@ -7,6 +7,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mainWindowController = MainWindowController()
         NSApp.mainMenu = buildMainMenu(jobTarget: mainWindowController)
         mainWindowController?.showWindow(nil)
+        DispatchQueue.main.async { [weak mainWindowController] in
+            mainWindowController?.applyInitialSplitPositionsIfNeeded()
+        }
         NSApp.activate(ignoringOtherApps: true)
     }
 

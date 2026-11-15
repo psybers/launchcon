@@ -73,6 +73,15 @@ Notes:
   `brew services list`) are not yet surfaced — that needs `brew services`
   integration.
 
+## Sidebar filters
+
+`DomainSidebarController` has a "Filters" section with six checkboxes
+(Loaded, Unloaded, Disabled, Enabled, Running, Stopped), all checked by
+default. Unchecked filters land in `JobStore.disabledFilters`; `visibleJobs`
+removes any job matching an unchecked `JobFilter` (predicates overlap — e.g.
+a running job is also loaded), then applies the label `filterText` search.
+This is independent of the service-type group selection.
+
 ## Hard-won gotchas
 
 - **`launchctl list <domain>` doesn't exist on modern macOS.** Use
@@ -82,9 +91,21 @@ Notes:
 - **Pipe-buffer deadlock:** `launchctl print gui/<uid>` emits >64KB.
   `Launchctl.launchctl` drains stdout/stderr concurrently — keep it that
   way; reading after `waitUntilExit` hangs forever.
-- **`NSSplitView` proportional resize:** pinning outer split items'
-  `minimumThickness == maximumThickness` makes them fixed-width so the
-  middle pane absorbs all extra space.
+- **Main window split view is a plain `NSSplitView`, not
+  `NSSplitViewController`.** The latter's constraint-driven layout could
+  not be made to honor initial pane widths (outer panes swallowed the
+  window). The three pane VCs are children of a plain container VC with
+  their views as direct `NSSplitView` subviews; `NSSplitViewDelegate`
+  `constrainMin/MaxCoordinate` keep minimum widths while dragging, and only
+  the job list has a flexible width so it absorbs window resizes.
+- **`windowDidLoad` never fires** for the programmatically created
+  `NSWindowController`. Initial split positions are applied via
+  `applyInitialSplitPositionsIfNeeded()` — called from `AppDelegate` after
+  `showWindow` and by an `NSWindow.didResizeNotification` observer.
+- **`NSSplitView` initial pane sizes come from the subviews' existing
+  frames**, and each `setPosition` re-lays out the *other* dividers from
+  their stored positions — set the rightmost divider first, then the left
+  (see `applyInitialSplitPositions`).
 - **Window sizing:** assign `contentViewController` *before*
   `setContentSize`/`center`, and set `translatesAutoresizingMaskIntoConstraints
   = false` on scroll views or the window collapses to a strip.
