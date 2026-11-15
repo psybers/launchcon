@@ -1,5 +1,11 @@
 import AppKit
 
+/// Flipped document view so scroll content top-aligns when shorter than
+/// the clip view.
+private final class DocumentContainerView: NSView {
+    override var isFlipped: Bool { true }
+}
+
 /// Right-hand inspector: Info (plist summary + diagnostics), live launchd
 /// state, log tail, and raw plist XML — switched by a segmented control.
 final class JobDetailController: NSViewController {
@@ -171,7 +177,7 @@ final class JobDetailController: NSViewController {
         editButton.alignment = .left
         infoStack.addArrangedSubview(editButton)
 
-        configureScroll(infoScroll, document: infoStack)
+        embedInScroll(infoScroll, content: infoStack)
     }
 
     private func rebuildDiagnostics(for job: Job?) {
@@ -252,7 +258,7 @@ final class JobDetailController: NSViewController {
 
         stateOuterStack.addArrangedSubview(toolbar)
         stateOuterStack.addArrangedSubview(stateRowsStack)
-        configureScroll(stateScroll, document: stateOuterStack)
+        embedInScroll(stateScroll, content: stateOuterStack)
     }
 
     private func showState(_ properties: [String: String]) {
@@ -377,6 +383,35 @@ final class JobDetailController: NSViewController {
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
+    }
+
+    /// Wraps `content` in a flipped container so it top-aligns inside the
+    /// scroll view instead of sitting at the bottom when shorter than the
+    /// visible area. The container is at least as tall as the clip view.
+    private func embedInScroll(_ scrollView: NSScrollView, content: NSView) {
+        let container = DocumentContainerView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        content.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(content)
+        scrollView.documentView = container
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .noBorder
+
+        let bottom = content.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        bottom.priority = .defaultHigh
+        let heightMatch = container.heightAnchor.constraint(equalTo: content.heightAnchor)
+        heightMatch.priority = .defaultHigh
+
+        NSLayoutConstraint.activate([
+            content.topAnchor.constraint(equalTo: container.topAnchor),
+            content.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            bottom,
+            heightMatch,
+            container.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.contentView.heightAnchor),
+            container.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
+        ])
     }
 
     @objc private func logSourceChanged() {
