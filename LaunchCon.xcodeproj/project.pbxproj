@@ -15,6 +15,7 @@
 		254FADEFD122C11BACABF59B /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F62B3B5A53C8218D6908ACE /* MainWindowController.swift */; };
 		32F663FC06358B2EF0A18EFA /* Plist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D32C23D7B1EC449DD2C577F /* Plist.swift */; };
 		408CF73D4CF769438F662831 /* JobKeySchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17D3FEB56B89F1A8634B07E /* JobKeySchema.swift */; };
+		59BAABDDDAD6D242E726986A /* SystemAccounts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A95367389A2B9579FC1712F /* SystemAccounts.swift */; };
 		6568BE20A195DBCAD9586C49 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D45611FC4ED1230595AD1009 /* AppDelegate.swift */; };
 		68AF51FE0718A4EDDD854DB5 /* Launchctl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6014E89288243DFB34C7F9F1 /* Launchctl.swift */; };
 		85946A95856EA0AFF816D11C /* JobEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE0A71C9AC041A8417CE91F /* JobEditorViewController.swift */; };
@@ -57,6 +58,7 @@
 		889377DDFAD4784AEECB15E7 /* LaunchConTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchConTests.swift; sourceTree = "<group>"; };
 		8F62B3B5A53C8218D6908ACE /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
 		97BFC5374C53FA61F4E391D0 /* LogTail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogTail.swift; sourceTree = "<group>"; };
+		9A95367389A2B9579FC1712F /* SystemAccounts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAccounts.swift; sourceTree = "<group>"; };
 		ADF66B2DA6655E439A3A5A38 /* LaunchCon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LaunchCon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D090D726ECF6363E913D089F /* LaunchConTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LaunchConTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D45611FC4ED1230595AD1009 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -107,6 +109,7 @@
 				7D32C23D7B1EC449DD2C577F /* Plist.swift */,
 				3DA292D5CE92B706D090E710 /* PlistDocument.swift */,
 				03715B1E16B29555642BC35A /* ServicePrintParser.swift */,
+				9A95367389A2B9579FC1712F /* SystemAccounts.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -243,6 +246,7 @@
 				32F663FC06358B2EF0A18EFA /* Plist.swift in Sources */,
 				BE18060A71ABB1EDF196BDFB /* PlistDocument.swift in Sources */,
 				B486D7D5FBAA6B5E4D95940C /* ServicePrintParser.swift in Sources */,
+				59BAABDDDAD6D242E726986A /* SystemAccounts.swift in Sources */,
 				0BB59315ADA7A06446A3C712 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

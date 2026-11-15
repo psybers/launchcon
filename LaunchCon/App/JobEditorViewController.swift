@@ -149,8 +149,8 @@ final class JobEditorViewController: NSViewController {
                 return .unsupported
             }
             return value == nil || value is NSNumber ? .integer : .unsupported
-        case .string:
-            return value == nil || value is String ? .string : .unsupported
+        case .string, .userName, .groupName:
+            return value == nil || value is String ? schema.kind : .unsupported
         case .stringList:
             return value == nil || value is [String] ? .stringList : .unsupported
         case .stringMap:
@@ -217,21 +217,13 @@ final class JobEditorViewController: NSViewController {
             return stack
 
         case .popup(let options):
-            let popup = NSPopUpButton(frame: .zero, pullsDown: false)
-            var allOptions = options
-            // Keep an unrecognized existing value selectable so it round-trips.
-            if let current = value as? String, !options.contains(current) {
-                allOptions.append(current)
-            }
-            popup.addItems(withTitles: [""] + allOptions)
-            if let current = value as? String, let index = allOptions.firstIndex(of: current) {
-                popup.selectItem(at: index + 1)
-            }
-            popup.target = self
-            popup.action = #selector(edited)
-            popup.font = .systemFont(ofSize: 13)
-            controls[schema.key] = popup
-            return popup
+            return makePopup(options: options, current: value as? String, key: schema.key)
+
+        case .userName:
+            return makePopup(options: SystemAccounts.userNames, current: value as? String, key: schema.key)
+
+        case .groupName:
+            return makePopup(options: SystemAccounts.groupNames, current: value as? String, key: schema.key)
 
         case .bool:
             let checkbox = NSButton(checkboxWithTitle: "", target: self, action: #selector(edited))
@@ -271,6 +263,25 @@ final class JobEditorViewController: NSViewController {
             field.font = .systemFont(ofSize: 12)
             return field
         }
+    }
+
+    /// Popup whose first item is blank (unset); an existing value that isn't
+    /// in `options` is appended so it round-trips.
+    private func makePopup(options: [String], current: String?, key: String) -> NSPopUpButton {
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        var allOptions = options
+        if let current, !options.contains(current) {
+            allOptions.append(current)
+        }
+        popup.addItems(withTitles: [""] + allOptions)
+        if let current, let index = allOptions.firstIndex(of: current) {
+            popup.selectItem(at: index + 1)
+        }
+        popup.target = self
+        popup.action = #selector(edited)
+        popup.font = .systemFont(ofSize: 13)
+        controls[key] = popup
+        return popup
     }
 
     private func wire(_ field: NSTextField) {
@@ -388,7 +399,7 @@ final class JobEditorViewController: NSViewController {
                     integerError = schema.title
                 }
 
-            case .popup:
+            case .popup, .userName, .groupName:
                 guard let popup = controls[key] as? NSPopUpButton else { continue }
                 let title = popup.titleOfSelectedItem ?? ""
                 if title.isEmpty { newContents.removeValue(forKey: key) } else { newContents[key] = title }

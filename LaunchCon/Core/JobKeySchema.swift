@@ -14,6 +14,10 @@ enum PlistEditorKind {
     case stringMap
     /// Popup with fixed options.
     case popup([String])
+    /// User account name — dropdown of local users.
+    case userName
+    /// Group account name — dropdown of local groups.
+    case groupName
     /// `StartCalendarInterval`-style schedule (dict or array of dicts).
     case calendarInterval
     /// Value exists but has no simple editor (dicts, calendar intervals, etc.).
@@ -39,8 +43,8 @@ struct JobKeySchema {
         JobKeySchema(key: "StandardOutPath", title: "Standard Output", kind: .string, isPath: true),
         JobKeySchema(key: "StandardErrorPath", title: "Standard Error", kind: .string, isPath: true),
         JobKeySchema(key: "EnvironmentVariables", title: "Environment Variables", kind: .stringMap, isPath: false),
-        JobKeySchema(key: "UserName", title: "User Name", kind: .string, isPath: false),
-        JobKeySchema(key: "GroupName", title: "Group Name", kind: .string, isPath: false),
+        JobKeySchema(key: "UserName", title: "User Name", kind: .userName, isPath: false),
+        JobKeySchema(key: "GroupName", title: "Group Name", kind: .groupName, isPath: false),
         JobKeySchema(key: "ProcessType", title: "Process Type",
                      kind: .popup(["Background", "Interactive", "Adaptive", "Standard"]), isPath: false),
         JobKeySchema(key: "LowPriorityIO", title: "Low Priority IO", kind: .bool, isPath: false),
