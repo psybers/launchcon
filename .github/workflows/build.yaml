@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build App
         run: |
@@ -43,7 +43,7 @@ jobs:
           hdiutil create -volname "LaunchCon Installer" -format UDZO -srcfolder build/LaunchCon.app -ov LaunchCon-${{ github.ref_name }}.dmg
 
       - name: Upload Release Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: LaunchCon
           path: LaunchCon-${{ github.ref_name }}.dmg
