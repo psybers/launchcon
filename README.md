@@ -28,6 +28,7 @@ The easiest way to install is via Homebrew:
 
 ```sh
 brew trust --cask psybers/homebrew-tap/launchcon
+brew install --cask psybers/homebrew-tap/launchcon
 xattr -d com.apple.quarantine /Applications/LaunchCon.app
 ```
 
