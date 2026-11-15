@@ -148,9 +148,16 @@ final class JobListController: NSViewController {
     }
 
     func refresh() {
+        // Remember the selection by label — reloadData can drop it or leave
+        // it pointing at a different row when the job set changes.
+        let selectedLabel = selectedJob()?.label
         tableView.reloadData()
         emptyLabel.isHidden = !store.visibleJobs.isEmpty || store.isLoading
         emptyLabel.stringValue = store.isLoading ? "Loading…" : (store.loadError ?? "No jobs")
+        if let selectedLabel, selectedJob()?.label != selectedLabel,
+           let row = store.visibleJobs.firstIndex(where: { $0.label == selectedLabel }) {
+            tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        }
         // reloadData preserves the selection silently — re-emit it so the
         // detail pane refreshes with the new job objects (plist, status).
         onSelectionChange?(selectedJob())

@@ -20,7 +20,6 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
         window.title = "Edit \(jobLabel)"
 
         editor = JobEditorViewController(document: document)
-        editor.onSaved = onSaved
         window.contentViewController = editor
         window.setContentSize(NSSize(width: 620, height: 680))
         window.center()
@@ -28,6 +27,12 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
         super.init(window: window)
         window.delegate = self
 
+        editor.onSaved = { [weak self] in
+            onSaved()
+            // save() updated the dirty baseline, so this closes without
+            // the unsaved-changes prompt.
+            self?.window?.close()
+        }
         editor.onCancel = { [weak self] in
             self?.cancel()
         }
