@@ -22,14 +22,29 @@ final class JobStore {
         return url
     }
 
+    /// Homebrew service plist locations under common prefixes. Usually empty —
+    /// `brew services` writes into the standard LaunchAgents/LaunchDaemons
+    /// dirs — but included for completeness.
+    static let homebrewPlistDirectories: [URL] = [
+        URL(fileURLWithPath: "/opt/homebrew/Homebrew/Library/LaunchAgents"),
+        URL(fileURLWithPath: "/opt/homebrew/Homebrew/Library/LaunchDaemons"),
+        URL(fileURLWithPath: "/usr/local/Homebrew/Library/LaunchAgents"),
+        URL(fileURLWithPath: "/usr/local/Homebrew/Library/LaunchDaemons"),
+    ]
+
+    static let serverDaemonDirectory = URL(fileURLWithPath:
+        "/Applications/Server.app/Contents/ServerRoot/System/Library/LaunchDaemons")
+
     static let allPlistDirectories: [URL] = [
         homeLibrary("LaunchAgents"),
         URL(fileURLWithPath: "/Library/LaunchAgents"),
         URL(fileURLWithPath: "/Library/LaunchDaemons"),
         URL(fileURLWithPath: "/System/Library/LaunchAgents"),
         URL(fileURLWithPath: "/System/Library/LaunchDaemons"),
-    ]
+        serverDaemonDirectory,
+    ] + homebrewPlistDirectories
 
+    /// Service types matching LaunchControl's taxonomy.
     static func defaultGroups() -> [DomainGroup] {
         [
             DomainGroup(
@@ -43,24 +58,34 @@ final class JobStore {
                 plistDirectories: [homeLibrary("LaunchAgents")]
             ),
             DomainGroup(
-                title: "LaunchAgents",
+                title: "Global Agents",
                 launchdDomain: .guiCurrentUser,
                 plistDirectories: [URL(fileURLWithPath: "/Library/LaunchAgents")]
             ),
             DomainGroup(
-                title: "LaunchDaemons",
+                title: "Global Daemons",
                 launchdDomain: nil,
                 plistDirectories: [URL(fileURLWithPath: "/Library/LaunchDaemons")]
             ),
             DomainGroup(
                 title: "System Agents",
-                launchdDomain: nil,
+                launchdDomain: .guiCurrentUser,
                 plistDirectories: [URL(fileURLWithPath: "/System/Library/LaunchAgents")]
             ),
             DomainGroup(
                 title: "System Daemons",
                 launchdDomain: nil,
                 plistDirectories: [URL(fileURLWithPath: "/System/Library/LaunchDaemons")]
+            ),
+            DomainGroup(
+                title: "Server Daemons",
+                launchdDomain: nil,
+                plistDirectories: [serverDaemonDirectory]
+            ),
+            DomainGroup(
+                title: "Homebrew",
+                launchdDomain: nil,
+                plistDirectories: homebrewPlistDirectories
             ),
         ]
     }
