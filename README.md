@@ -20,6 +20,26 @@ A native macOS app for managing `launchd` jobs — launch agents and daemons —
 - Xcode (or just the Xcode command line tools)
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
 
+## Installing
+
+The easiest way to install is via Homebrew:
+
+```sh
+brew trust --cask psybers/homebrew-tap/launchcon
+xattr -d com.apple.quarantine /Applications/LaunchCon.app
+```
+
+Note that if you don't remove the quarantine, the app won't run.  You can do
+that with the above command, or by going into Settings and allowing the program
+to run.
+
+## Updating
+
+```sh
+brew upgrade psybers/tap/launchcon
+xattr -d com.apple.quarantine /Applications/LaunchCon.app
+```
+
 ## Building
 
 The Xcode project is generated from `project.yml` and is not checked in.
