@@ -342,6 +342,42 @@ final class JobValidatorTests: XCTestCase {
     }
 }
 
+final class JobSearchableTextTests: XCTestCase {
+
+    func testMatchesLabelDomainAndStatus() {
+        let job = Job(
+            label: "com.example.agent", pid: 42, lastExitStatus: nil,
+            domain: .guiCurrentUser, plistPath: "/tmp/agent.plist",
+            isLoaded: true, isDisabled: false, plist: nil
+        )
+        XCTAssertTrue(job.searchableText.contains("com.example.agent"))
+        XCTAssertTrue(job.searchableText.contains("gui/"))
+        XCTAssertTrue(job.searchableText.contains("running"))
+        XCTAssertTrue(job.searchableText.contains("42"))
+        XCTAssertTrue(job.searchableText.contains("/tmp/agent.plist"))
+    }
+
+    func testMatchesPlistKeysAndValues() {
+        let job = Job(
+            label: "com.example.agent", pid: nil, lastExitStatus: nil,
+            domain: .guiCurrentUser, plistPath: nil,
+            isLoaded: false, isDisabled: false,
+            plist: [
+                "ProgramArguments": ["/usr/bin/env", "FOO=bar"],
+                "KeepAlive": true,
+                "StartInterval": 300,
+            ]
+        )
+        XCTAssertTrue(job.searchableText.contains("programarguments"))
+        XCTAssertTrue(job.searchableText.contains("/usr/bin/env"))
+        XCTAssertTrue(job.searchableText.contains("foo=bar"))
+        XCTAssertTrue(job.searchableText.contains("keepalive"))
+        XCTAssertTrue(job.searchableText.contains("true"))
+        XCTAssertTrue(job.searchableText.contains("300"))
+        XCTAssertFalse(job.searchableText.contains("nonexistent"))
+    }
+}
+
 final class LogTailTests: XCTestCase {
 
     func testTailReturnsLastLines() throws {

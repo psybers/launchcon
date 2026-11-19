@@ -101,6 +101,7 @@ final class JobStore {
     private enum DefaultsKey {
         static let disabledFilters = "JobStore.disabledFilters"
         static let selectedGroup = "JobStore.selectedGroup"
+        static let showOnlyProblematic = "JobStore.showOnlyProblematic"
     }
 
     var selectedGroup: DomainGroup? {
@@ -143,6 +144,18 @@ final class JobStore {
         didSet { notifyChange() }
     }
 
+    /// When true, only jobs with error/warning diagnostics are shown.
+    var showOnlyProblematic = UserDefaults.standard.bool(forKey: DefaultsKey.showOnlyProblematic) {
+        didSet {
+            UserDefaults.standard.set(showOnlyProblematic, forKey: DefaultsKey.showOnlyProblematic)
+            notifyChange()
+        }
+    }
+
+    /// Diagnostics per job id, computed lazily for the "Problems only"
+    /// filter and cleared whenever the job set is reloaded.
+    private var diagnosticsCache: [String: [Diagnostic]] = [:]
+
     /// Filters unchecked in the sidebar. A job is hidden when it matches any
     /// filter in this set.
     var disabledFilters: Set<JobFilter> = [] {
@@ -184,7 +197,11 @@ final class JobStore {
         }
         let filter = filterText.trimmingCharacters(in: .whitespaces)
         if !filter.isEmpty {
-            result = result.filter { $0.label.localizedCaseInsensitiveContains(filter) }
+            let needle = filter.lowercased()
+            result = result.filter { $0.searchableText.contains(needle) }
+        }
+        if showOnlyProblematic {
+            result = result.filter { hasProblems($0) }
         }
         if !sortDescriptors.isEmpty {
             result.sort { Self.comesBefore($0, $1, descriptors: sortDescriptors) }
@@ -267,6 +284,17 @@ final class JobStore {
         await MainActor.run { self.reload() }
     }
 
+    /// Cached `JobValidator` results; info-level findings don't count as
+    /// problems.
+    private func hasProblems(_ job: Job) -> Bool {
+        if let cached = diagnosticsCache[job.id] {
+            return cached.contains { $0.severity != .info }
+        }
+        let diagnostics = JobValidator.validate(job)
+        diagnosticsCache[job.id] = diagnostics
+        return diagnostics.contains { $0.severity != .info }
+    }
+
     /// Unloads and re-bootstraps a service so plist changes take effect.
     func reloadService(label: String, domain: LaunchdDomain, plistPath: String) async throws {
         try await Launchctl.unload(label: label, domain: domain)
@@ -278,6 +306,7 @@ final class JobStore {
         guard let group = selectedGroup else {
             await MainActor.run {
                 self.jobs = []
+                self.diagnosticsCache = [:]
                 self.isLoading = false
                 self.notifyChange()
             }
@@ -350,6 +379,7 @@ final class JobStore {
 
         await MainActor.run {[loaded, firstError] in
             self.jobs = loaded
+            self.diagnosticsCache = [:]
             self.isLoading = false
             self.loadError = firstError
             self.notifyChange()

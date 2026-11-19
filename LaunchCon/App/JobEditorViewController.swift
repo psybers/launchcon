@@ -18,6 +18,7 @@ final class JobEditorViewController: NSViewController {
     private var controls: [String: NSControl] = [:]
     private var textViews: [String: NSTextView] = [:]
     private var calendarEditors: [String: CalendarIntervalEditor] = [:]
+    private var keyPalettePopover: NSPopover?
     private var statusLabel: NSTextField!
     private var saveButton: NSButton!
     private var cancelButton: NSButton!
@@ -83,7 +84,14 @@ final class JobEditorViewController: NSViewController {
         bottomBar.edgeInsets = NSEdgeInsets(top: 8, left: 16, bottom: 12, right: 16)
         bottomBar.translatesAutoresizingMaskIntoConstraints = false
 
-        let headerStack = NSStackView(views: [pathLabel])
+        let keysButton = NSButton(title: "Keys…", target: self, action: #selector(showKeyPalette(_:)))
+        keysButton.bezelStyle = .rounded
+        keysButton.controlSize = .small
+
+        let headerRow = NSStackView(views: [pathLabel, NSView(), keysButton])
+        headerRow.orientation = .horizontal
+        headerRow.alignment = .centerY
+        let headerStack = NSStackView(views: [headerRow])
         headerStack.orientation = .vertical
         headerStack.edgeInsets = NSEdgeInsets(top: 12, left: 16, bottom: 4, right: 16)
         headerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -119,7 +127,7 @@ final class JobEditorViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        buildRows()
+        rebuildRows()
     }
 
     override func viewDidAppear() {
@@ -208,10 +216,53 @@ final class JobEditorViewController: NSViewController {
         return false
     }
 
-    private func buildRows() {
+    private func rebuildRows() {
+        for view in formStack.arrangedSubviews {
+            formStack.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+        controls.removeAll()
+        textViews.removeAll()
+        calendarEditors.removeAll()
         for schema in JobKeySchema.all {
             formStack.addArrangedSubview(makeRow(for: schema))
         }
+    }
+
+    // MARK: - Key palette
+
+    /// Opens the searchable key palette; clicking a key adds it to the
+    /// document (with its schema default when unset) and highlights its row.
+    @objc private func showKeyPalette(_ sender: NSButton) {
+        if let popover = keyPalettePopover, popover.isShown {
+            popover.close()
+            keyPalettePopover = nil
+            return
+        }
+        let palette = KeyPaletteViewController(document: document)
+        palette.onPick = { [weak self] key in
+            self?.addKey(key)
+            (self?.keyPalettePopover?.contentViewController as? KeyPaletteViewController)?
+                .reload()
+        }
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentSize = NSSize(width: 700, height: 340)
+        popover.contentViewController = palette
+        popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+        keyPalettePopover = popover
+    }
+
+    /// Inserts `key` into the document when absent (using the schema's
+    /// default value, if any), rebuilds the form, and scrolls to the row.
+    func addKey(_ key: String) {
+        guard let schema = JobKeySchema.all.first(where: { $0.key == key }) else { return }
+        if document.value(forKey: key) == nil, let defaultValue = schema.defaultValue {
+            document.set(defaultValue, forKey: key)
+            rebuildRows()
+        }
+        edited()
+        highlight(key: key)
     }
 
     private func makeRow(for schema: JobKeySchema) -> NSView {

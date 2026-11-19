@@ -17,6 +17,16 @@ final class PlistDocument {
         contents[key]
     }
 
+    /// Sets a value in the working contents without saving. Passing nil
+    /// removes the key. The change is unsaved until `save` is called.
+    func set(_ value: Any?, forKey key: String) {
+        if let value {
+            contents[key] = value
+        } else {
+            contents.removeValue(forKey: key)
+        }
+    }
+
     /// Replaces the entire contents and writes atomically to disk.
     func save(_ newContents: [String: Any]) throws {
         try Plist.save(newContents, to: url)

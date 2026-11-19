@@ -39,6 +39,39 @@ struct Job: Identifiable, Hashable {
         return "Not loaded"
     }
 
+    /// Lowercased haystack for the job list's filter field: label, domain,
+    /// status, plist path, pid/exit status, and every key and scalar value
+    /// in the plist.
+    var searchableText: String {
+        var parts = [label, domain.rawValue, statusText, plistPath ?? ""]
+        if let pid { parts.append(String(pid)) }
+        if let lastExitStatus { parts.append(String(lastExitStatus)) }
+        if let plist { collectSearchable(plist, into: &parts) }
+        return parts.joined(separator: " ").lowercased()
+    }
+
+    private func collectSearchable(_ value: Any, into parts: inout [String]) {
+        switch value {
+        case let string as String:
+            parts.append(string)
+        case let dict as [String: Any]:
+            for (key, val) in dict {
+                parts.append(key)
+                collectSearchable(val, into: &parts)
+            }
+        case let array as [Any]:
+            for element in array { collectSearchable(element, into: &parts) }
+        case let number as NSNumber:
+            if CFGetTypeID(number) == CFBooleanGetTypeID() {
+                parts.append(number.boolValue ? "true" : "false")
+            } else {
+                parts.append(number.stringValue)
+            }
+        default:
+            break
+        }
+    }
+
     static func == (lhs: Job, rhs: Job) -> Bool {
         lhs.id == rhs.id
     }

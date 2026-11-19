@@ -79,7 +79,13 @@ final class DomainSidebarController: NSViewController {
         filtersStack.alignment = .leading
         filtersStack.spacing = 2
 
-        let stack = NSStackView(views: [searchField, sectionLabel, scrollView, filtersLabel, filtersStack, refreshButton])
+        let problemsButton = NSButton(
+            checkboxWithTitle: "Problems only", target: self,
+            action: #selector(problemsOnlyChanged))
+        problemsButton.state = store.showOnlyProblematic ? .on : .off
+        problemsButton.controlSize = .small
+
+        let stack = NSStackView(views: [searchField, sectionLabel, scrollView, filtersLabel, filtersStack, problemsButton, refreshButton])
         stack.orientation = .vertical
         stack.spacing = 8
         stack.edgeInsets = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
@@ -121,6 +127,10 @@ final class DomainSidebarController: NSViewController {
             }
         }
         store.disabledFilters = disabled
+    }
+
+    @objc private func problemsOnlyChanged(_ sender: NSButton) {
+        store.showOnlyProblematic = sender.state == .on
     }
 
     @objc private func refreshClicked() {

@@ -23,6 +23,7 @@
 		B486D7D5FBAA6B5E4D95940C /* ServicePrintParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03715B1E16B29555642BC35A /* ServicePrintParser.swift */; };
 		BE18060A71ABB1EDF196BDFB /* PlistDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA292D5CE92B706D090E710 /* PlistDocument.swift */; };
 		CCAABCF1FEAA9F2B3BBCDFB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24E037238A5EE1DADC5B9853 /* Assets.xcassets */; };
+		D4CAB90C8A2CFE926E5167C3 /* KeyPaletteViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0FB284ECD66C8512044C90 /* KeyPaletteViewController.swift */; };
 		D89DE26CB8E76C9B38C4ED57 /* JobValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F791AB9152CA1538034DF232 /* JobValidator.swift */; };
 		DBAE86ED803FE0A9E95ADC22 /* JobEditorWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759908A2B3C8D3AC04B80BCA /* JobEditorWindowController.swift */; };
 		E0BDE7894CD087572792FBC4 /* LogTail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BFC5374C53FA61F4E391D0 /* LogTail.swift */; };
@@ -62,6 +63,7 @@
 		ADF66B2DA6655E439A3A5A38 /* LaunchCon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LaunchCon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D090D726ECF6363E913D089F /* LaunchConTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LaunchConTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D45611FC4ED1230595AD1009 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		DB0FB284ECD66C8512044C90 /* KeyPaletteViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyPaletteViewController.swift; sourceTree = "<group>"; };
 		F17D3FEB56B89F1A8634B07E /* JobKeySchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobKeySchema.swift; sourceTree = "<group>"; };
 		F791AB9152CA1538034DF232 /* JobValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobValidator.swift; sourceTree = "<group>"; };
 		FD25DBF30E9A5F5104718EAA /* DomainSidebarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainSidebarController.swift; sourceTree = "<group>"; };
@@ -125,6 +127,7 @@
 				759908A2B3C8D3AC04B80BCA /* JobEditorWindowController.swift */,
 				7D7BE7740A974E13A606900C /* JobListController.swift */,
 				3910F2E0E194165736F12301 /* JobStore.swift */,
+				DB0FB284ECD66C8512044C90 /* KeyPaletteViewController.swift */,
 				4D09E9DC5DF6F6547A168C84 /* main.swift */,
 				8F62B3B5A53C8218D6908ACE /* MainWindowController.swift */,
 			);
@@ -185,7 +188,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					2EEC1A5069C473C5C327D10B = {
 						ProvisioningStyle = Manual;
@@ -239,6 +242,7 @@
 				B45CB3A2D43FA4AAA174C9E1 /* JobListController.swift in Sources */,
 				FD4ABF3E61C18F14CB658C3F /* JobStore.swift in Sources */,
 				D89DE26CB8E76C9B38C4ED57 /* JobValidator.swift in Sources */,
+				D4CAB90C8A2CFE926E5167C3 /* KeyPaletteViewController.swift in Sources */,
 				68AF51FE0718A4EDDD854DB5 /* Launchctl.swift in Sources */,
 				14653E48802DD36E3D79AAAC /* LaunchdDomain.swift in Sources */,
 				E0BDE7894CD087572792FBC4 /* LogTail.swift in Sources */,
