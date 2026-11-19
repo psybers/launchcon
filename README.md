@@ -6,9 +6,9 @@ This was vibe coded with Devin. I don't know Swift and had never made a macOS ap
 
 ## Features
 
-- **Job browser** — three-pane window with a service-type sidebar (All, User Agents, LaunchAgents, LaunchDaemons, System Agents, System Daemons), a searchable job list with live status (running PID, exit status, disabled, loaded/not loaded), and an inspector pane.
+- **Job browser** — three-pane window with a service-type sidebar (All, User Agents, LaunchAgents, LaunchDaemons, System Agents, System Daemons), a searchable job list with live status (running PID, exit status, disabled, loaded/not loaded) that matches all job properties, a "Problems only" filter for jobs with diagnostics, and an inspector pane.
 - **Job actions** — load, unload, enable, disable, start, and stop jobs from the context menu or the Job menu, with confirmations for destructive operations.
-- **Property list editor** — schema-driven editor for common launchd keys (Program, ProgramArguments, RunAtLoad, KeepAlive, StartInterval, StartCalendarInterval, environment variables, paths, and more). Supports multiple calendar schedules, preserves unknown/complex keys, validates input, and offers to reload the job after saving.
+- **Property list editor** — schema-driven editor for common launchd keys (Program, ProgramArguments, RunAtLoad, KeepAlive, StartInterval, StartCalendarInterval, environment variables, paths, and more) plus a searchable key palette for finding and adding keys. Supports multiple calendar schedules, preserves unknown/complex keys, validates input, and offers to reload the job after saving.
 - **New job creation** — Job → New Job… scaffolds a plist in `~/Library/LaunchAgents`.
 - **Inspector tabs** — per-job detail view with:
   - **Info** — summary fields plus diagnostics (missing/unreadable plists, missing or mismatched labels, missing or non-executable programs, bad paths, invalid calendar intervals) with severity icons.
@@ -81,3 +81,4 @@ LaunchConTests/        XCTest suite for parsers, plist handling, validator, log 
 - The app is **not sandboxed** — `launchctl` IPC requires it.
 - Daemon and system-domain operations generally need administrator privileges; the app surfaces launchctl errors rather than working around them.
 - `/System` plists can't be modified on modern macOS (sealed system volume).
+- Menu bar extras, auto-updates/notarization, and `log show` integration are intentionally out of scope — the feature set above is the target.

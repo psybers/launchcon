@@ -6,8 +6,7 @@ Guidance for AI agents (and humans) working on LaunchCon.
 
 A native macOS app for managing `launchd` jobs, inspired by soma-zone's
 LaunchControl. Swift + AppKit, programmatic UI (no storyboards/nibs), no
-third-party dependencies. See `OVERVIEW.md` for product intent and `PLAN.md`
-for the phased roadmap — work is done milestone-by-milestone.
+third-party dependencies. See `README.md` for product intent.
 
 ## Naming
 
