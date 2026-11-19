@@ -1,13 +1,14 @@
 import AppKit
 
 /// NSTableView that selects the row under the cursor before showing the
-/// context menu, so menu actions apply to the clicked job.
+/// context menu, so menu actions apply to the clicked job. The menu only
+/// appears when the click is on a row.
 private final class JobTableView: NSTableView {
     override func menu(for event: NSEvent) -> NSMenu? {
-        let row = row(at: convert(event.locationInWindow, from: nil))
-        if row >= 0 {
-            selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-        }
+        let point = convert(event.locationInWindow, from: nil)
+        let row = row(at: point)
+        guard row >= 0, rect(ofRow: row).contains(point) else { return nil }
+        selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
         return super.menu(for: event)
     }
 }
