@@ -1,4 +1,4 @@
-# LaunchController
+# LaunchCon
 
 A native macOS app for managing `launchd` jobs — launch agents and daemons — without living in `launchctl`.
 
