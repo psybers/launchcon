@@ -83,4 +83,3 @@ LaunchConTests/        XCTest suite for parsers, plist handling, validator, log 
 - The app is **not sandboxed** — `launchctl` IPC requires it.
 - Daemon and system-domain operations generally need administrator privileges; the app surfaces launchctl errors rather than working around them.
 - `/System` plists can't be modified on modern macOS (sealed system volume).
-- Menu bar extras, auto-updates/notarization, and `log show` integration are intentionally out of scope — the feature set above is the target.
