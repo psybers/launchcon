@@ -136,6 +136,8 @@ This is independent of the service-type group selection.
 
 - **Do not `git commit` until explicitly asked.** Leave changes in the
   working tree; the user reviews and decides when to commit.
+- Commit messages should not include a "Generated with [Devin]" trailer;
+  a Co-authored-by line is fine.
 - Swift 5 mode, macOS 13+ deployment target.
 - UI built in code with Auto Layout; prefer `NSStackView` for rows.
 - Errors surface as `NSAlert`; launchctl failures throw `LaunchctlError`.
