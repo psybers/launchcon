@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'
 
+env:
+  # The only app-specific value in this file. The cask name is derived
+  # from the repository name, so it must match Casks/<repo>.rb in the tap.
+  APP_NAME: LaunchCon
+
 jobs:
   build-macos:
     runs-on: macos-latest
@@ -19,41 +24,41 @@ jobs:
       - name: Build App
         run: |
           xcodebuild archive \
-            -project LaunchCon.xcodeproj \
-            -scheme LaunchCon \
+            -project ${APP_NAME}.xcodeproj \
+            -scheme ${APP_NAME} \
             -configuration Release \
-            -archivePath $RUNNER_TEMP/LaunchCon.xcarchive \
+            -archivePath $RUNNER_TEMP/${APP_NAME}.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
       - name: Extract build .app from archive wrapper
         run: |
           mkdir -p build
-          cp -R $RUNNER_TEMP/LaunchCon.xcarchive/Products/Applications/LaunchCon.app build/
+          cp -R $RUNNER_TEMP/${APP_NAME}.xcarchive/Products/Applications/${APP_NAME}.app build/
 
       - name: Ad-Hoc Sign Application
         run: |
           # Force an ad-hoc signature ('-') deeply through the bundle
-          codesign --force --deep --sign - build/LaunchCon.app
+          codesign --force --deep --sign - build/${APP_NAME}.app
 
       - name: Package into a DMG
         run: |
           # It is highly recommended to distribute as a DMG or a ZIP
           # Install 'create-dmg' via brew on the runner if you want a fancy DMG
-          hdiutil create -volname "LaunchCon Installer" -format UDZO -srcfolder build/LaunchCon.app -ov LaunchCon-${{ github.ref_name }}.dmg
+          hdiutil create -volname "${APP_NAME} Installer" -format UDZO -srcfolder build/${APP_NAME}.app -ov ${APP_NAME}-${{ github.ref_name }}.dmg
 
       - name: Upload Release Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: LaunchCon
-          path: LaunchCon-${{ github.ref_name }}.dmg
+          name: ${{ env.APP_NAME }}
+          path: ${{ env.APP_NAME }}-${{ github.ref_name }}.dmg
 
       - name: Upload DMG to GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Uploads the file directly to the release matching current tag
-          gh release upload ${{ github.ref_name }} LaunchCon-${{ github.ref_name }}.dmg --clobber
+          gh release upload ${{ github.ref_name }} ${{ env.APP_NAME }}-${{ github.ref_name }}.dmg --clobber
 
   update-cask:
     needs: build-macos
@@ -84,11 +89,12 @@ jobs:
       - name: Update cask and push
         run: |
           cd tap
-          sed -i "s/^  version \".*\"/  version \"$VERSION\"/" Casks/launchcon.rb
-          sed -i "s/^  sha256 \".*\"/  sha256 \"$SHA256\"/" Casks/launchcon.rb
+          CASK="${GITHUB_REPOSITORY##*/}"
+          sed -i "s/^  version \".*\"/  version \"$VERSION\"/" "Casks/${CASK}.rb"
+          sed -i "s/^  sha256 \".*\"/  sha256 \"$SHA256\"/" "Casks/${CASK}.rb"
           git diff
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Casks/launchcon.rb
-          git commit -m "add launchcon $VERSION release"
+          git add "Casks/${CASK}.rb"
+          git commit -m "add ${CASK} $VERSION release"
           git push
