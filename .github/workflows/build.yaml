@@ -54,3 +54,41 @@ jobs:
         run: |
           # Uploads the file directly to the release matching current tag
           gh release upload ${{ github.ref_name }} LaunchCon-${{ github.ref_name }}.dmg --clobber
+
+  update-cask:
+    needs: build-macos
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read  # Download the release asset
+
+    steps:
+      - name: Download DMG and compute SHA-256
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir -p dmg
+          gh release download "$TAG" --repo psybers/launchcon --pattern '*.dmg' --dir dmg
+          SHA256=$(sha256sum dmg/*.dmg | awk '{print $1}')
+          VERSION="${TAG#v}"
+          echo "SHA256=$SHA256" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Check out tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/psybers/homebrew-tap.git" tap
+
+      - name: Update cask and push
+        run: |
+          cd tap
+          sed -i "s/^  version \".*\"/  version \"$VERSION\"/" Casks/launchcon.rb
+          sed -i "s/^  sha256 \".*\"/  sha256 \"$SHA256\"/" Casks/launchcon.rb
+          git diff
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/launchcon.rb
+          git commit -m "launchcon $VERSION"
+          git push

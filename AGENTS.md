@@ -132,6 +132,20 @@ This is independent of the service-type group selection.
 - The app is intentionally **unsandboxed** (launchctl IPC).
 - Preserve unknown plist keys when editing — never silently drop data.
 
+## Releasing
+
+Releases are fully automated. Run the **Cut Release** workflow
+(`.github/workflows/release.yaml`) with a version like `0.2.3`, or
+`gh workflow run release.yaml -f version=0.2.3`. It creates the `v*` tag
+and a GitHub release with generated notes, which triggers `build.yaml`:
+build → DMG → release asset → SHA-256 → commit+push the cask update to
+`psybers/homebrew-tap` (`Casks/launchcon.rb`).
+
+`build.yaml`'s `update-cask` job needs the `TAP_TOKEN` repo secret: a
+fine-grained PAT with **Contents: read/write** on `psybers/homebrew-tap`
+only. Pushing a `v*` tag manually still works — the release must exist on
+GitHub before the build finishes or the DMG upload step fails.
+
 ## Conventions
 
 - **Do not `git commit` until explicitly asked.** Leave changes in the
