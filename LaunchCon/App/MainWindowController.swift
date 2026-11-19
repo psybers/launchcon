@@ -42,7 +42,6 @@ final class MainWindowController: NSWindowController {
     private var splitView: PanePreservingSplitView!
     private var paneContainer: NSViewController?
     private var editorWindowControllers: [JobEditorWindowController] = []
-    private var activeEditor: JobEditorWindowController?
 
     init() {
         let window = NSWindow(
@@ -320,7 +319,6 @@ final class MainWindowController: NSWindowController {
             self?.editorWindowControllers.removeAll { $0 === editor }
         }
         editorWindowControllers.append(editor)
-        activeEditor = editor
         editor.showWindow(nil)
         if let highlightKey {
             editor.highlight(key: highlightKey)
@@ -408,12 +406,6 @@ final class MainWindowController: NSWindowController {
         store.reload()
     }
 
-    // MARK: - Editor save (menu)
-
-    @objc func saveEditor(_ sender: Any?) {
-        activeEditor?.saveDocument()
-    }
-
     private func showAlert(title: String, message: String) {
         let alert = NSAlert()
         alert.messageText = title
@@ -439,10 +431,9 @@ final class MainWindowController: NSWindowController {
         performJobAction(action, on: job)
     }
 
-    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+    @objc func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(jobRefresh(_:)) { return true }
         if menuItem.action == #selector(newJob(_:)) { return true }
-        if menuItem.action == #selector(saveEditor(_:)) { return activeEditor != nil }
         guard let job = selectedJobForMenu() else { return false }
         switch menuItem.action {
         case #selector(jobLoad(_:)):

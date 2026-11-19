@@ -58,10 +58,6 @@ final class JobEditorWindowController: NSWindowController, NSWindowDelegate {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func saveDocument() {
-        editor.save()
-    }
-
     /// Scrolls to and flashes the editor row for `key`.
     func highlight(key: String) {
         editor.view.layoutSubtreeIfNeeded()

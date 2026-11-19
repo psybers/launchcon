@@ -64,6 +64,7 @@ final class JobListController: NSViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.menu = buildJobMenu()
+        tableView.allowsEmptySelection = true
         tableView.target = self
         tableView.doubleAction = #selector(rowDoubleClicked)
         // Not usesAutomaticRowHeights: that makes the table size cells by
@@ -207,7 +208,7 @@ final class JobListController: NSViewController {
     @objc private func jobStop(_ sender: Any?) { performAction(.stop) }
     @objc private func jobRefresh(_ sender: Any?) { store.reload() }
 
-    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+    @objc func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(jobRefresh(_:)) { return true }
         guard let job = selectedJob() else { return false }
         switch menuItem.action {

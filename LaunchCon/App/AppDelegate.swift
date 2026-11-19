@@ -68,8 +68,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         jobMenu.addItem(jobItem("Start", #selector(MainWindowController.jobStart(_:))))
         jobMenu.addItem(jobItem("Stop", #selector(MainWindowController.jobStop(_:))))
         jobMenu.addItem(.separator())
-        jobMenu.addItem(jobItem("Save", #selector(MainWindowController.saveEditor(_:)), "s"))
-        jobMenu.addItem(.separator())
         jobMenu.addItem(jobItem("Refresh", #selector(MainWindowController.jobRefresh(_:)), "r"))
 
         // Window menu
