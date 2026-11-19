@@ -4,6 +4,8 @@ A native macOS app for managing `launchd` jobs — launch agents and daemons —
 
 This was vibe coded with Devin. I don't know Swift and had never made a macOS app, so it may be buggy. I want to keep it basic; the current feature set is probably the most I will add. Bug-fix PRs are welcome.
 
+![LaunchCon](docs/screenshot.png)
+
 ## Features
 
 - **Job browser** — three-pane window with a service-type sidebar (All, User Agents, LaunchAgents, LaunchDaemons, System Agents, System Daemons), a searchable job list with live status (running PID, exit status, disabled, loaded/not loaded) that matches all job properties, a "Problems only" filter for jobs with diagnostics, and an inspector pane.
