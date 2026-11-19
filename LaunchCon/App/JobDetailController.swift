@@ -295,6 +295,19 @@ final class JobDetailController: NSViewController {
         embedInScroll(stateScroll, content: stateOuterStack)
     }
 
+    /// Scrolls a non-flipped scroll view's document back to its top.
+    private func scrollToTop(_ scrollView: NSScrollView) {
+        scrollView.layoutSubtreeIfNeeded()
+        guard let document = scrollView.documentView else { return }
+        let clip = scrollView.contentView
+        let top = NSPoint(
+            x: clip.bounds.origin.x,
+            y: max(0, document.bounds.height - clip.bounds.height)
+        )
+        clip.scroll(to: top)
+        scrollView.reflectScrolledClipView(clip)
+    }
+
     private func showState(_ properties: [String: String]) {
         for view in stateRowsStack.arrangedSubviews {
             stateRowsStack.removeArrangedSubview(view)
@@ -302,6 +315,7 @@ final class JobDetailController: NSViewController {
         }
         guard !properties.isEmpty else {
             stateStatusLabel.stringValue = "No state information"
+            scrollToTop(stateScroll)
             return
         }
         stateStatusLabel.stringValue = ""
@@ -320,6 +334,7 @@ final class JobDetailController: NSViewController {
             row.spacing = 2
             stateRowsStack.addArrangedSubview(row)
         }
+        scrollToTop(stateScroll)
     }
 
     private func refreshState(for job: Job) {
@@ -331,6 +346,7 @@ final class JobDetailController: NSViewController {
 
         guard job.isLoaded else {
             stateStatusLabel.stringValue = "Job is not loaded"
+            scrollToTop(stateScroll)
             return
         }
 
@@ -351,6 +367,7 @@ final class JobDetailController: NSViewController {
                         $0.removeFromSuperview()
                     }
                     self.stateStatusLabel.stringValue = "Failed: \(error.localizedDescription)"
+                    self.scrollToTop(self.stateScroll)
                 }
             }
         }
